@@ -209,6 +209,53 @@ end;
 
 ## Zadanie 4. Triggery
 
+- **trg_reservation_log** - tworzy log'a przy dodaniu / aktualizacji statusu rezerwacji
+```sql
+create or replace trigger trg_reservation_log
+after insert or update on RESERVATION
+for each row
+begin
+    if :OLD.STATUS != :NEW.STATUS then
+        insert into LOG (RESERVATION_ID, LOG_DATE, STATUS)
+    values (:NEW.RESERVATION_ID, SYSDATE, :NEW.STATUS);
+    end if;
+end;
+```
+---
+- **trg_prevent_reservation_deletion** - blokuje możliwość usuwania rezerwacji
+```sql
+create or replace trigger trg_prevent_reservation_deletion
+before delete on RESERVATION
+for each row 
+begin
+    RAISE_APPLICATION_ERROR(-20001, 'Usunięcie rezerwacji jest zabronione.');
+end;
+```
+---
+- **Aktualizacja procedur** polega na usunięciu wierszów z dodawaniem do log'ów
+#### Z procedury **p_add_reservation** usuwamy zmienną *s_reservation_id* oraz zmieniamy:
+```sql
+  -- Wstawienie rekordu do RESERVATION i pobranie RESERVATION_ID  
+  insert into RESERVATION (TRIP_ID, PERSON_ID, STATUS)  
+  values (a_trip_id, a_person_id, 'N')  
+  returning RESERVATION_ID into s_reservation_id;  
+  
+  -- Wstawienie rekordu do LOG  
+  insert into LOG (RESERVATION_ID, LOG_DATE, STATUS)  
+  values (s_reservation_id, SYSDATE, 'N');  
+```
+#### na:
+```sql
+  -- Wstawienie rekordu do RESERVATION i pobranie RESERVATION_ID
+  insert into RESERVATION (TRIP_ID, PERSON_ID, STATUS)
+  values (a_trip_id, a_person_id, 'N');
+```
+
+#### Natomiast z procedury **p_modify_reservation_status** usuwamy 3 takie wiersze:
+```sql
+insert into LOG (RESERVATION_ID, LOG_DATE, STATUS) values (a_reservation_id, SYSDATE, a_status);  
+```
+---
 
 ## Zadanie 5. Triggery
 

@@ -2,10 +2,12 @@
 widoki, funkcje, procedury, triggery ćwiczenie  
 **Imiona i nazwiska autorów:** Tomasz Furgała, Konrad Tendaj, Łukasz Zegar
 
+
 ## Zadanie 0.
   Skomentuj dzialanie transakcji. Jak działa polecenie commit, rollback?. Co się dzieje w przypadku wystąpienia błędów podczas wykonywania
 transakcji? Porównaj sposób programowania operacji wykorzystujących transakcje w Oracle PL/SQL ze znanym ci systemem/językiem MS
 Sqlserver T-SQL
+
 
 ## Zadanie 1. Widoki
   vw_reservation widok łączy dane z tabel: trip, person, reservation
@@ -14,6 +16,7 @@ zwracane dane: reservation_id, country, trip_date, trip_name, firstname, lastnam
 zwracane dane: trip_id, country, trip_date, trip_name, max_no_places, no_available_places (liczba wolnych miejsc)
   vw_available_trip
 podobnie jak w poprzednim punkcie, z tym że widok pokazuje jedynie dostępne wycieczki (takie które są w przyszłości i są na nie wolne miejsca)
+
 
 ## Zadanie 2. Funkcje
   f_trip_participants
@@ -28,6 +31,7 @@ funkcja zwraca podobny zestaw danych jak widok vw_reservation
 zadaniem funkcji jest zwrócenie listy wycieczek do wskazanego kraju, dostępnych w zadanym okresie czasu (od date_from do
 date_to)
 parametry funkcji: country, date_from, date_to
+
 
 ## Zadanie 3. Procedury
 
@@ -99,14 +103,20 @@ exception
 end;
 ```
 
+
 ## Zadanie 4. Triggery
+
 
 ## Zadanie 5. Triggery
 
+
 ## Zadanie 6.
+
 
 ## Zadanie 6a.
 
+
 ## Zadanie 6b.
+
 
 ## Zadanie 7.

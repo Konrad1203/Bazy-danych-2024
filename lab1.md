@@ -1,5 +1,5 @@
 # LAB 1. Oracle PL/Sql
-widoki, funkcje, procedury, triggery ćwiczenie
+widoki, funkcje, procedury, triggery ćwiczenie  
 **Imiona i nazwiska autorów:** Tomasz Furgała, Konrad Tendaj, Łukasz Zegar
 
 

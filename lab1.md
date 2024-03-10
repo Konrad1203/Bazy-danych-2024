@@ -23,14 +23,99 @@ podobnie jak w poprzednim punkcie, z tym że widok pokazuje jedynie dostępne wy
 zadaniem funkcji jest zwrócenie listy uczestników wskazanej wycieczki
 parametry funkcji: trip_id
 funkcja zwraca podobny zestaw danych jak widok vw_eservation
+
+```sql
+CREATE OR REPLACE FUNCTION f_trip_participants (p_trip_id NUMBER)
+    RETURN SYS_REFCURSOR
+IS
+    participants_cursor SYS_REFCURSOR;
+    trip_exists NUMBER;
+BEGIN
+    IF p_trip_id IS NULL THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Parametry funkcji muszą być określone.');
+    END IF;
+
+    SELECT COUNT(*) INTO trip_exists FROM TRIP WHERE trip_id = p_trip_id;
+
+    IF trip_exists = 0 THEN
+        RAISE_APPLICATION_ERROR(-20002, 'Wycieczka o podanym trip_id nie istnieje.');
+    END IF;
+
+    OPEN participants_cursor FOR
+        SELECT * FROM vw_reservation WHERE trip_id = p_trip_id;
+    RETURN participants_cursor;
+END;
+```
+
   f_person_reservations
 zadaniem funkcji jest zwrócenie listy rezerwacji danej osoby
 parametry funkcji: person_id
 funkcja zwraca podobny zestaw danych jak widok vw_reservation
+
+```sql
+CREATE or REPLACE FUNCTION f_person_reservations (p_person_id NUMBER)
+    RETURN SYS_REFCURSOR
+IS
+    participants_cursor SYS_REFCURSOR;
+    person_exists NUMBER;
+BEGIN
+    IF p_person_id IS NULL THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Parametry funkcji muszą być określone.');
+    END IF;
+
+    SELECT COUNT(*) INTO person_exists FROM PERSON WHERE PERSON_ID = p_person_id;
+
+    IF person_exists = 0 THEN
+        RAISE_APPLICATION_ERROR(-20002, 'Wycieczka o podanym trip_id nie istnieje.');
+    END IF;
+
+    OPEN participants_cursor FOR
+        SELECT * FROM vw_reservation WHERE person_id = p_person_id;
+    RETURN participants_cursor;
+end;
+```
+
+
   f_available_trips_to
 zadaniem funkcji jest zwrócenie listy wycieczek do wskazanego kraju, dostępnych w zadanym okresie czasu (od date_from do
 date_to)
 parametry funkcji: country, date_from, date_to
+
+```sql
+CREATE or REPLACE FUNCTION f_available_trips_to (p_country VARCHAR(50), p_date_from date, p_date_to date)
+    RETURN SYS_REFCURSOR
+IS
+    participants_cursor SYS_REFCURSOR;
+BEGIN
+    IF p_country IS NULL OR p_date_from IS NULL OR p_date_to IS NULL THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Wszystkie parametry funkcji muszą być określone.');
+    END IF;
+
+    IF p_date_from > p_date_to THEN
+        RAISE_APPLICATION_ERROR(-20002, 'Data początkowa nie może być większa niż data końcowa.');
+    END IF;
+
+
+    OPEN participants_cursor FOR
+        SELECT * FROM TRIP WHERE COUNTRY = p_country AND TRIP_DATE > p_date_from AND TRIP_DATE < p_date_to;
+    RETURN participants_cursor;
+end;
+```
+
+Czy kontrola parametrów w przypadku funkcji ma sens?
+- jakie są zalety/wady takiego rozwiązania?
+
+Zalety:
+1. Bezpieczeństwo: Kontrola parametrów pozwala zapobiec wykonaniu funkcji z nieprawidłowymi danymi lub unieważnionymi wartościami parametrów, co może prowadzić do błędów lub niewłaściwych wyników.
+
+2. Ochrona danych: Poprawna kontrola parametrów może chronić dane w bazie przed błędnym dostępem lub zmianami spowodowanymi przez nieprawidłowe parametry.
+
+3. Poprawność danych: Zapewnienie, że funkcja otrzymuje poprawne dane, pomaga zachować integralność danych w systemie.
+
+Wady:
+1. Złożoność kodu: Dodanie kontroli parametrów może zwiększyć złożoność kodu funkcji, co może prowadzić do większej liczby linii kodu i trudniejszej analizy i debugowania.
+
+2. Wydajność: Długotrwałe lub złożone kontrole parametrów mogą wpływać na wydajność funkcji, zwłaszcza gdy są wywoływane wielokrotnie w złożonych zapytaniach.
 
 
 ## Zadanie 3. Procedury

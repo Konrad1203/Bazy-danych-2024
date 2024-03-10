@@ -259,6 +259,46 @@ insert into LOG (RESERVATION_ID, LOG_DATE, STATUS) values (a_reservation_id, SYS
 
 ## Zadanie 5. Triggery
 
+- **trg_insert_reservation** - sprawdza czy jest wolne miejsce do nowej rezerwacji
+```sql
+create or replace trigger trg_insert_reservation
+before insert on RESERVATION
+for each row
+begin
+    if f_check_free_places(:NEW.TRIP_ID) <= 0 then
+        RAISE_APPLICATION_ERROR(-20005, 'Brak wolnych miejsc na wycieczce.');
+    end if;
+end;
+```
+---
+- **trg_update_reservation_status** - sprawdza czy jest wolne miejsce do odnowienia rezerwacji ze statusu anulowanej 'C' na nową 'N' / zapłaconą 'P'
+```sql
+create or replace trigger trg_update_reservation_status
+before update on RESERVATION
+for each row
+begin
+    if :OLD.STATUS = 'C' and f_check_free_places(:NEW.TRIP_ID) <= 0 then
+        RAISE_APPLICATION_ERROR(-20005, 'Brak wolnych miejsc na wycieczce.');
+    end if;
+end;
+```
+---
+- **Aktualizacja procedur** polega na usunięciu fragmentów ze sprawdzania wolnych miejsc
+#### Z procedury **p_add_reservation** usuwamy ten fragment:
+```sql
+  -- Sprawdzenie czy jest wolne miejsce
+  if f_check_free_places(a_trip_id) <= 0 then
+    RAISE_APPLICATION_ERROR(-20005, 'Brak wolnych miejsc na wycieczce.');
+  end if;
+```
+#### Z procedury **p_modify_reservation_status** usuwamy ten fragment:
+```sql
+  -- Sprawdzenie czy jest wolne miejsce  
+  if f_check_free_places(s_trip_id) <= 0 then  
+    RAISE_APPLICATION_ERROR(-20005, 'Brak wolnych miejsc na wycieczce.');  
+  end if;
+```
+---
 
 ## Zadanie 6.
 

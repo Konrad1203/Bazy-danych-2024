@@ -48,7 +48,7 @@ begin
     return s_reserved_places;  
 end;
 ```
-
+---
 - pomocnicza funkcja **f_check_free_places** - zwraca liczbę wolnych miejsc na daną wycieczkę podając jej id
 ```sql
 create or replace function f_check_free_places(a_trip_id int)  
@@ -62,7 +62,7 @@ begin
     return s_free_places;  
 end;
 ```
-
+---
 - **p_add_reservation** - dopisanie nowej rezerwacji
 ```sql
 create or replace procedure p_add_reservation(a_trip_id int, a_person_id int)  
@@ -114,7 +114,7 @@ exception
         DBMS_OUTPUT.PUT_LINE('Wystąpił błąd: ' || SQLERRM);  
 end;
 ```
-
+---
 - **p_modify_reservation_status** - zmiana statusu rezerwacji
 ```sql
 create or replace procedure p_modify_reservation_status(a_reservation_id int, a_status char(1))  
@@ -177,7 +177,7 @@ begin
     end if;  
 end;
 ```
-
+---
 - **p_modify_max_no_places** - zmiana maksymalnej liczby miejsc na daną wycieczkę
 ```sql
 create or replace procedure p_modify_max_no_places(a_trip_id int, a_max_no_places int)  
@@ -205,7 +205,7 @@ exception
         raise;  
 end;
 ```
-
+---
 
 ## Zadanie 4. Triggery
 

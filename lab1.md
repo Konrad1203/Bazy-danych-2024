@@ -388,6 +388,112 @@ end;
 ## Zadanie 6.
 
 
+#### Modyfikacja procedury p_add_reservation:
+```sql
+create or replace procedure p_add_reservation_6(a_trip_id int, a_person_id int)
+as
+  s_trip_date date;
+  s_count int;
+  s_reservation_id int;
+  s_available_places int;
+begin
+  -- Sprawdzenie czy osoba istnieje w systemie
+  select count(*) into s_count from PERSON where PERSON_ID = a_person_id;
+    if s_count = 0 then RAISE_APPLICATION_ERROR(-20001, 'Nie istnieje osoba o podanym ID.');
+    end if;
+
+    -- Sprawdzenie czy wycieczka istnieje w systemie
+  select count(*) into s_count from TRIP where TRIP_ID = a_trip_id;
+    if s_count = 0 then RAISE_APPLICATION_ERROR(-20002, 'Wycieczka o podanym ID nie istnieje.');
+    end if;
+
+    -- Sprawdzenie czy wycieczka się już nie odbyła
+  select TRIP_DATE into s_trip_date from TRIP t where t.TRIP_ID = a_trip_id;
+    DBMS_OUTPUT.PUT_LINE('Data wycieczki: ' || s_trip_date);
+    if s_trip_date < SYSDATE then RAISE_APPLICATION_ERROR(-20003, 'Wycieczka już się odbyła.');
+    end if;
+
+    -- Sprawdzenie czy osoba jest już zapisana na tą wycieczkę
+  select COUNT(*) into s_count from RESERVATION
+    where TRIP_ID = a_trip_id and PERSON_ID = a_person_id;
+    if s_count > 0 then RAISE_APPLICATION_ERROR(-20004, 'Ta osoba jest już zapisana na tę wycieczkę.');
+    end if;
+
+  select NO_AVAILABLE_PLACES
+  into s_available_places
+  from TRIP
+  where TRIP_ID = a_trip_id;
+
+  if (s_available_places <= 0) then
+        RAISE_APPLICATION_ERROR(-20005, 'Brak wolnych miejsc na wycieczce.');
+  end if;
+
+    -- Wstawienie rekordu do RESERVATION i pobranie RESERVATION_ID
+  insert into RESERVATION (TRIP_ID, PERSON_ID, STATUS)
+    values (a_trip_id, a_person_id, 'N')
+    returning RESERVATION_ID into s_reservation_id;
+
+    -- Wstawienie rekordu do LOG
+  insert into LOG (RESERVATION_ID, LOG_DATE, STATUS)
+    values (s_reservation_id, SYSDATE, 'N');
+
+    commit;
+    DBMS_OUTPUT.PUT_LINE('Rezerwacja została pomyślnie dodana.');
+exception
+ when others then rollback;
+        DBMS_OUTPUT.PUT_LINE('Wystąpił błąd: ' || SQLERRM);
+end;
+```
+
+#### Modyfikacja procedury p_modify_reservation_status:
+```sql
+
+```
+
+
+#### Modyfikacja procedury p_modify_max_no_places:
+```sql
+create or replace procedure p_modify_max_no_places_6(a_trip_id int, a_max_no_places int)
+as
+  s_count int;
+  s_available_places int;
+  s_max_no_places int;
+begin
+  if a_max_no_places <= 0 then
+  RAISE_APPLICATION_ERROR(-20001, 'Proszę podać poprawną liczbę');
+    end if;
+
+    select count(*) into s_count from TRIP WHERE TRIP_ID = a_trip_id;
+    if s_count = 0 then
+  RAISE_APPLICATION_ERROR(-20002, 'Nie istnieje wycieczka o podanym ID');
+    end if;
+
+  select NO_AVAILABLE_PLACES
+  into s_available_places
+  from TRIP
+  where TRIP_ID = a_trip_id;
+
+  select MAX_NO_PLACES
+  into s_max_no_places
+  from TRIP
+  where TRIP_ID = a_trip_id;
+
+    if s_max_no_places - s_available_places > a_max_no_places then
+  RAISE_APPLICATION_ERROR(-20003, 'Nie można zmiejszyć liczby miejsc poniżej liczby zarezerwowanych');
+    end if;
+
+    UPDATE TRIP
+    SET MAX_NO_PLACES = a_max_no_places,
+        NO_AVAILABLE_PLACES = s_available_places - s_max_no_places + a_max_no_places
+    WHERE TRIP_ID = a_trip_id;
+    commit;
+exception
+ when others then rollback;
+        raise;
+end;
+```
+
+
 ## Zadanie 6a.
 
 

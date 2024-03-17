@@ -12,10 +12,40 @@ Sqlserver T-SQL
 ## Zadanie 1. Widoki
   vw_reservation widok łączy dane z tabel: trip, person, reservation
 zwracane dane: reservation_id, country, trip_date, trip_name, firstname, lastname, status, trip_id, person_id
+
+```sql
+CREATE OR REPLACE VIEW VW_RESERVATION AS
+SELECT R.RESERVATION_ID, T.COUNTRY, T.TRIP_DATE, T.TRIP_NAME, 
+       P.FIRSTNAME, P.LASTNAME, R.STATUS, R.TRIP_ID, R.PERSON_ID
+FROM RESERVATION R
+JOIN TRIP T ON R.TRIP_ID = T.TRIP_ID
+JOIN PERSON P ON R.PERSON_ID = P.PERSON_ID;
+```
+---
   vw_trip widok pokazuje liczbę wolnych miejsc na każdą wycieczkę
 zwracane dane: trip_id, country, trip_date, trip_name, max_no_places, no_available_places (liczba wolnych miejsc)
+
+Wykorzystuje złączenie lewe, aby uwzględnić wszystkie wycieczki, nawet te bez rezerwacji. Liczba dostępnych miejsc jest obliczana na podstawie różnicy między maksymalną liczbą miejsc a liczbą rezerwacji.
+
+```sql
+CREATE OR REPLACE VIEW VW_TRIP AS
+SELECT T.TRIP_ID, T.COUNTRY, T.TRIP_DATE, T.TRIP_NAME, T.MAX_NO_PLACES,
+       T.MAX_NO_PLACES - COUNT(R.RESERVATION_ID) AS no_available_places
+FROM TRIP T
+LEFT JOIN RESERVATION R ON T.TRIP_ID = R.TRIP_ID AND R.STATUS != 'C'
+GROUP BY T.TRIP_ID, T.COUNTRY, T.TRIP_DATE, T.TRIP_NAME, T.MAX_NO_PLACES
+```
+---
   vw_available_trip
 podobnie jak w poprzednim punkcie, z tym że widok pokazuje jedynie dostępne wycieczki (takie które są w przyszłości i są na nie wolne miejsca)
+
+Korzystamy z poprzeniego widoku ( VW_TRIP)
+```sql
+CREATE OR REPLACE VIEW VW_AVAILABLE_TRIP AS
+SELECT * FROM VW_TRIP
+WHERE TRIP_DATE > SYSDATE AND NO_AVAILABLE_PLACES > 0;
+```
+---
 
 
 ## Zadanie 2. Funkcje

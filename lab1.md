@@ -221,8 +221,7 @@ begin
     -- Wstawienie rekordu do LOG  
   insert into LOG (RESERVATION_ID, LOG_DATE, STATUS)  
     values (s_reservation_id, SYSDATE, 'N');  
-  
-    commit;  
+   
     DBMS_OUTPUT.PUT_LINE('Rezerwacja została pomyślnie dodana.');  
 exception  
  when others then rollback;  
@@ -232,10 +231,10 @@ end;
 ---
 - **p_modify_reservation_status** - zmiana statusu rezerwacji
 ```sql
-create or replace procedure p_modify_reservation_status(a_reservation_id int, a_status char(1))  
+create or replace procedure p_modify_reservation_status(a_reservation_id int, a_status char)  
 as  
   s_trip_id int;  
-    s_curr_status char(1);  
+    s_curr_status char;  
     s_trip_date date;  
 begin  
   -- Poprawność argumentu a_status  
@@ -314,7 +313,6 @@ begin
   
     update TRIP  
     set MAX_NO_PLACES = a_max_no_places where TRIP_ID = a_trip_id;  
-    commit;  
 exception  
  when others then rollback;  
         raise;  
@@ -467,7 +465,6 @@ begin
   insert into LOG (RESERVATION_ID, LOG_DATE, STATUS)
     values (s_reservation_id, SYSDATE, 'N');
 
-    commit;
     DBMS_OUTPUT.PUT_LINE('Rezerwacja została pomyślnie dodana.');
 exception
  when others then rollback;
@@ -516,7 +513,6 @@ begin
     SET MAX_NO_PLACES = a_max_no_places,
         NO_AVAILABLE_PLACES = s_available_places - s_max_no_places + a_max_no_places
     WHERE TRIP_ID = a_trip_id;
-    commit;
 exception
  when others then rollback;
         raise;

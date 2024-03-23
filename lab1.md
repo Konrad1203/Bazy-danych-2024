@@ -21,6 +21,8 @@ FROM RESERVATION R
 JOIN TRIP T ON R.TRIP_ID = T.TRIP_ID
 JOIN PERSON P ON R.PERSON_ID = P.PERSON_ID;
 ```
+![VW_RESERVATION](img/VW_RESERVATION.png)
+
 ---
   vw_trip widok pokazuje liczbę wolnych miejsc na każdą wycieczkę
 zwracane dane: trip_id, country, trip_date, trip_name, max_no_places, no_available_places (liczba wolnych miejsc)
@@ -35,6 +37,7 @@ FROM TRIP T
 LEFT JOIN RESERVATION R ON T.TRIP_ID = R.TRIP_ID AND R.STATUS != 'C'
 GROUP BY T.TRIP_ID, T.COUNTRY, T.TRIP_DATE, T.TRIP_NAME, T.MAX_NO_PLACES
 ```
+![VW_TRIP](img/VW_TRIP.png)
 ---
   vw_available_trip
 podobnie jak w poprzednim punkcie, z tym że widok pokazuje jedynie dostępne wycieczki (takie które są w przyszłości i są na nie wolne miejsca)
@@ -45,6 +48,7 @@ CREATE OR REPLACE VIEW VW_AVAILABLE_TRIP AS
 SELECT * FROM VW_TRIP
 WHERE TRIP_DATE > SYSDATE AND NO_AVAILABLE_PLACES > 0;
 ```
+![VW_AVAILABLE_TRIP](img/VW_AVAILABLE_TRIP.png)
 ---
 
 
@@ -231,64 +235,74 @@ end;
 ---
 - **p_modify_reservation_status** - zmiana statusu rezerwacji
 ```sql
-create or replace procedure p_modify_reservation_status(a_reservation_id int, a_status char)  
-as  
-  s_trip_id int;  
-    s_curr_status char;  
-    s_trip_date date;  
-begin  
-  -- Poprawność argumentu a_status  
-  if a_status not in ('N', 'P', 'C') then  
-  RAISE_APPLICATION_ERROR(-20001, 'Niepoprawny status.');  
-    end if;  
-  
-    -- Pobranie TRIP_ID i STATUS  
-  select TRIP_ID, STATUS into s_trip_id, s_curr_status  
-    from RESERVATION where RESERVATION_ID = a_reservation_id;  
-  
-    -- Sprawdzenie istnienia rezerwacji  
-  if s_trip_id is null then  
-  RAISE_APPLICATION_ERROR(-20002, 'Rezerwacja o podanym ID nie istnieje.');  
-    end if;  
-  
-    -- Sprawdzenie czy rezerwacja nie ma już podanego statusu  
-  if s_curr_status = a_status then  
-  RAISE_APPLICATION_ERROR(-20001, 'Rezerwacja ma już ten status.');  
-    end if;  
-  
-    if a_status = 'C' then -- anulowanie rezerwacji  
-  update RESERVATION set STATUS = a_status where RESERVATION_ID = a_reservation_id;  
-        insert into LOG (RESERVATION_ID, LOG_DATE, STATUS) values (a_reservation_id, SYSDATE, a_status);  
-        DBMS_OUTPUT.PUT_LINE('Twoja rezerwacja została anulowana.');  
-        return;  
-    end if;  
-  
-    if s_curr_status = 'C' then  
-  -- Data wycieczki  
-  select TRIP_DATE into s_trip_date from TRIP  
-        where TRIP_ID = s_trip_id;  
-  
-        -- Sprawdzenie czy wycieczka się już nie odbyła  
-  if s_trip_date < SYSDATE then  
-  RAISE_APPLICATION_ERROR(-20003, 'Wycieczka już się odbyła. Nie można zmienić statusu');  
-        end if;  
-  
-        -- Sprawdzenie czy jest wolne miejsce  
-  if f_check_free_places(s_trip_id) <= 0 then  
-  RAISE_APPLICATION_ERROR(-20005, 'Brak wolnych miejsc na wycieczce.');  
-        end if;  
-  
-        update RESERVATION set STATUS = a_status where RESERVATION_ID = a_reservation_id;  
-        insert into LOG (RESERVATION_ID, LOG_DATE, STATUS) values (a_reservation_id, SYSDATE, a_status);  
-        DBMS_OUTPUT.PUT_LINE('Status twojej rezerwacji został zaaktualizowany.');  
-        return;  
-    end if;  
-  
-    if a_status = 'P' then  
- update RESERVATION set STATUS = a_status where RESERVATION_ID = a_reservation_id;  
-        insert into LOG (RESERVATION_ID, LOG_DATE, STATUS) values (a_reservation_id, SYSDATE, a_status);  
-        DBMS_OUTPUT.PUT_LINE('Twoje miejsce jest już potwierdzone i zapłacone.');  
-    end if;  
+create or replace procedure p_modify_reservation_status(a_reservation_id int, a_status char)
+as
+  s_trip_id int;
+  s_curr_status char;
+  s_trip_date date;
+begin
+  -- Poprawność argumentu a_status
+  if a_status not in ('N', 'P', 'C') then
+  RAISE_APPLICATION_ERROR(-20001, 'Niepoprawny status.');
+    end if;
+
+
+    -- Pobranie TRIP_ID i STATUS
+  select TRIP_ID, STATUS into s_trip_id, s_curr_status
+    from RESERVATION where RESERVATION_ID = a_reservation_id;
+
+    -- Sprawdzenie istnienia rezerwacji
+  if s_trip_id is null then
+  RAISE_APPLICATION_ERROR(-20002, 'Rezerwacja o podanym ID nie istnieje.');
+    end if;
+
+    -- Sprawdzenie czy rezerwacja nie ma już podanego statusu
+  if s_curr_status = a_status then
+  RAISE_APPLICATION_ERROR(-20001, 'Rezerwacja ma już ten status.');
+    end if;
+
+  -- Data wycieczki
+  select TRIP_DATE into s_trip_date from TRIP
+        where TRIP_ID = s_trip_id;
+
+  if s_curr_status = 'P' AND a_status = 'N' then
+      RAISE_APPLICATION_ERROR(-20006, 'Nie można zmienić statusu na N, gdy jest już opłacona rezerwacja.');
+  end if;
+
+
+
+  if a_status = 'C' then -- anulowanie rezerwacji
+    -- Sprawdzenie czy wycieczka się już nie odbyła
+      if s_trip_date < SYSDATE then
+            RAISE_APPLICATION_ERROR(-20003, 'Wycieczka już się odbyła. Nie można zmienić statusu');
+      end if;
+
+    update RESERVATION set STATUS = a_status where RESERVATION_ID = a_reservation_id;
+    insert into LOG (RESERVATION_ID, LOG_DATE, STATUS) values (a_reservation_id, SYSDATE, a_status);
+    DBMS_OUTPUT.PUT_LINE('Twoja rezerwacja została anulowana.');
+
+    return;
+  end if;
+
+  if s_curr_status = 'C' then
+        -- Sprawdzenie czy jest wolne miejsce
+    if f_check_free_places(s_trip_id) <= 0 then
+        RAISE_APPLICATION_ERROR(-20005, 'Brak wolnych miejsc na wycieczce.');
+    end if;
+
+    update RESERVATION set STATUS = a_status where RESERVATION_ID = a_reservation_id;
+    insert into LOG (RESERVATION_ID, LOG_DATE, STATUS) values (a_reservation_id, SYSDATE, a_status);
+    DBMS_OUTPUT.PUT_LINE('Status twojej rezerwacji został zaaktualizowany.');
+    return;
+  end if;
+
+
+
+  if a_status = 'P' then
+    update RESERVATION set STATUS = a_status where RESERVATION_ID = a_reservation_id;
+    insert into LOG (RESERVATION_ID, LOG_DATE, STATUS) values (a_reservation_id, SYSDATE, a_status);
+    DBMS_OUTPUT.PUT_LINE('Twoje miejsce jest już potwierdzone i zapłacone.');
+  end if;
 end;
 ```
 ---
@@ -364,9 +378,123 @@ end;
   values (a_trip_id, a_person_id, 'N');
 ```
 
+```sql
+create or replace procedure p_add_reservation_4(a_trip_id int, a_person_id int)
+as
+  s_trip_date date;
+    s_count int;
+    s_reservation_id int;
+begin
+  -- Sprawdzenie czy osoba istnieje w systemie
+  select count(*) into s_count from PERSON where PERSON_ID = a_person_id;
+    if s_count = 0 then RAISE_APPLICATION_ERROR(-20001, 'Nie istnieje osoba o podanym ID.');
+    end if;
+
+    -- Sprawdzenie czy wycieczka istnieje w systemie
+  select count(*) into s_count from TRIP where TRIP_ID = a_trip_id;
+    if s_count = 0 then RAISE_APPLICATION_ERROR(-20002, 'Wycieczka o podanym ID nie istnieje.');
+    end if;
+
+    -- Sprawdzenie czy wycieczka się już nie odbyła
+  select TRIP_DATE into s_trip_date from TRIP t where t.TRIP_ID = a_trip_id;
+    DBMS_OUTPUT.PUT_LINE('Data wycieczki: ' || s_trip_date);
+    if s_trip_date < SYSDATE then RAISE_APPLICATION_ERROR(-20003, 'Wycieczka już się odbyła.');
+    end if;
+
+    -- Sprawdzenie czy osoba jest już zapisana na tą wycieczkę
+  select COUNT(*) into s_count from RESERVATION
+    where TRIP_ID = a_trip_id and PERSON_ID = a_person_id;
+    if s_count > 0 then RAISE_APPLICATION_ERROR(-20004, 'Ta osoba jest już zapisana na tę wycieczkę.');
+    end if;
+
+    -- Sprawdzenie czy jest wolne miejsce
+  if f_check_free_places(a_trip_id) <= 0 then
+  RAISE_APPLICATION_ERROR(-20005, 'Brak wolnych miejsc na wycieczce.');
+    end if;
+
+  -- Wstawienie rekordu do RESERVATION i pobranie RESERVATION_ID
+  insert into RESERVATION (TRIP_ID, PERSON_ID, STATUS)
+  values (a_trip_id, a_person_id, 'N');
+
+    DBMS_OUTPUT.PUT_LINE('Rezerwacja została pomyślnie dodana.');
+exception
+ when others then rollback;
+        DBMS_OUTPUT.PUT_LINE('Wystąpił błąd: ' || SQLERRM);
+end;
+```
+
 #### Natomiast z procedury **p_modify_reservation_status** usuwamy 3 takie wiersze:
 ```sql
 insert into LOG (RESERVATION_ID, LOG_DATE, STATUS) values (a_reservation_id, SYSDATE, a_status);  
+```
+
+```sql
+create or replace procedure p_modify_reservation_status_4(a_reservation_id int, a_status char)
+as
+  s_trip_id int;
+  s_curr_status char;
+  s_trip_date date;
+begin
+  -- Poprawność argumentu a_status
+  if a_status not in ('N', 'P', 'C') then
+  RAISE_APPLICATION_ERROR(-20001, 'Niepoprawny status.');
+    end if;
+
+
+    -- Pobranie TRIP_ID i STATUS
+  select TRIP_ID, STATUS into s_trip_id, s_curr_status
+    from RESERVATION where RESERVATION_ID = a_reservation_id;
+
+    -- Sprawdzenie istnienia rezerwacji
+  if s_trip_id is null then
+  RAISE_APPLICATION_ERROR(-20002, 'Rezerwacja o podanym ID nie istnieje.');
+    end if;
+
+    -- Sprawdzenie czy rezerwacja nie ma już podanego statusu
+  if s_curr_status = a_status then
+  RAISE_APPLICATION_ERROR(-20001, 'Rezerwacja ma już ten status.');
+    end if;
+
+  -- Data wycieczki
+  select TRIP_DATE into s_trip_date from TRIP
+        where TRIP_ID = s_trip_id;
+
+  if s_curr_status = 'P' AND a_status = 'N' then
+      RAISE_APPLICATION_ERROR(-20006, 'Nie można zmienić statusu na N, gdy jest już opłacona rezerwacja.');
+  end if;
+
+
+
+  if a_status = 'C' then -- anulowanie rezerwacji
+    -- Sprawdzenie czy wycieczka się już nie odbyła
+      if s_trip_date < SYSDATE then
+            RAISE_APPLICATION_ERROR(-20003, 'Wycieczka już się odbyła. Nie można zmienić statusu');
+      end if;
+
+    update RESERVATION set STATUS = a_status where RESERVATION_ID = a_reservation_id;
+    DBMS_OUTPUT.PUT_LINE('Twoja rezerwacja została anulowana.');
+
+    return;
+  end if;
+
+  if s_curr_status = 'C' then
+        -- Sprawdzenie czy jest wolne miejsce
+    if f_check_free_places(s_trip_id) <= 0 then
+        RAISE_APPLICATION_ERROR(-20005, 'Brak wolnych miejsc na wycieczce.');
+    end if;
+
+    update RESERVATION set STATUS = a_status where RESERVATION_ID = a_reservation_id;
+    DBMS_OUTPUT.PUT_LINE('Status twojej rezerwacji został zaaktualizowany.');
+    return;
+  end if;
+
+
+
+  if a_status = 'P' then
+    update RESERVATION set STATUS = a_status where RESERVATION_ID = a_reservation_id;
+    DBMS_OUTPUT.PUT_LINE('Twoje miejsce jest już potwierdzone i zapłacone.');
+  end if;
+end;
 ```
 ---
 
@@ -380,6 +508,7 @@ for each row
 begin
     if f_check_free_places(:NEW.TRIP_ID) <= 0 then
         RAISE_APPLICATION_ERROR(-20005, 'Brak wolnych miejsc na wycieczce.');
+        ROLLBACK;
     end if;
 end;
 ```
@@ -389,14 +518,32 @@ end;
 create or replace trigger trg_update_reservation_status
 before update on RESERVATION
 for each row
+DECLARE
+    v_trip_date DATE;
 begin
     if :OLD.STATUS = 'C' and f_check_free_places(:NEW.TRIP_ID) <= 0 then
         RAISE_APPLICATION_ERROR(-20005, 'Brak wolnych miejsc na wycieczce.');
+        Rollback;
     end if;
+
+    if :OLD.STATUS = 'P' AND :NEW.STATUS = 'N' then
+        RAISE_APPLICATION_ERROR(-20006, 'Nie można zmienić statusu na N, gdy jest już opłacona rezerwacja.');
+        Rollback;
+    end if;
+
+    SELECT trip_date INTO v_trip_date
+    FROM TRIP
+    WHERE TRIP_ID = :OLD.TRIP_ID;
+    if v_trip_date < SYSDATE then
+        RAISE_APPLICATION_ERROR(-20003, 'Wycieczka już się odbyła. Nie można zmienić statusu');
+        Rollback;
+  end if;
+
+
 end;
 ```
 ---
-- **Aktualizacja procedur** polega na usunięciu fragmentów ze sprawdzania wolnych miejsc
+### Aktualizacja procedur
 #### Z procedury **p_add_reservation** usuwamy ten fragment:
 ```sql
   -- Sprawdzenie czy jest wolne miejsce
@@ -404,21 +551,142 @@ end;
     RAISE_APPLICATION_ERROR(-20005, 'Brak wolnych miejsc na wycieczce.');
   end if;
 ```
-#### Z procedury **p_modify_reservation_status** usuwamy ten fragment:
 ```sql
-  -- Sprawdzenie czy jest wolne miejsce  
-  if f_check_free_places(s_trip_id) <= 0 then  
-    RAISE_APPLICATION_ERROR(-20005, 'Brak wolnych miejsc na wycieczce.');  
-  end if;
+  create or replace procedure p_add_reservation_5(a_trip_id int, a_person_id int)
+  as
+    s_trip_date date;
+      s_count int;
+  begin
+    -- Sprawdzenie czy osoba istnieje w systemie
+    select count(*) into s_count from PERSON where PERSON_ID = a_person_id;
+      if s_count = 0 then RAISE_APPLICATION_ERROR(-20001, 'Nie istnieje osoba o podanym ID.');
+      end if;
+
+      -- Sprawdzenie czy wycieczka istnieje w systemie
+    select count(*) into s_count from TRIP where TRIP_ID = a_trip_id;
+      if s_count = 0 then RAISE_APPLICATION_ERROR(-20002, 'Wycieczka o podanym ID nie istnieje.');
+      end if;
+
+      -- Sprawdzenie czy wycieczka się już nie odbyła
+    select TRIP_DATE into s_trip_date from TRIP t where t.TRIP_ID = a_trip_id;
+      DBMS_OUTPUT.PUT_LINE('Data wycieczki: ' || s_trip_date);
+      if s_trip_date < SYSDATE then RAISE_APPLICATION_ERROR(-20003, 'Wycieczka już się odbyła.');
+      end if;
+
+      -- Sprawdzenie czy osoba jest już zapisana na tą wycieczkę
+    select COUNT(*) into s_count from RESERVATION
+      where TRIP_ID = a_trip_id and PERSON_ID = a_person_id;
+      if s_count > 0 then RAISE_APPLICATION_ERROR(-20004, 'Ta osoba jest już zapisana na tę wycieczkę.');
+      end if;
+
+    -- Wstawienie rekordu do RESERVATION i pobranie RESERVATION_ID
+    insert into RESERVATION (TRIP_ID, PERSON_ID, STATUS)
+    values (a_trip_id, a_person_id, 'N');
+
+      DBMS_OUTPUT.PUT_LINE('Rezerwacja została pomyślnie dodana.');
+  exception
+  when others then rollback;
+          DBMS_OUTPUT.PUT_LINE('Wystąpił błąd: ' || SQLERRM);
+  end;
+  ```
+
+  #### Procedura "p_modify_reservation_status_5":
+  ```sql
+  create or replace procedure p_modify_reservation_status_5(a_reservation_id int, a_status char)
+  as
+    s_trip_id int;
+    s_curr_status char;
+  begin
+    -- Poprawność argumentu a_status
+    if a_status not in ('N', 'P', 'C') then
+    RAISE_APPLICATION_ERROR(-20001, 'Niepoprawny status.');
+      end if;
+
+
+      -- Pobranie TRIP_ID i STATUS
+    select TRIP_ID, STATUS into s_trip_id, s_curr_status
+      from RESERVATION where RESERVATION_ID = a_reservation_id;
+
+      -- Sprawdzenie istnienia rezerwacji
+    if s_trip_id is null then
+    RAISE_APPLICATION_ERROR(-20002, 'Rezerwacja o podanym ID nie istnieje.');
+      end if;
+
+      -- Sprawdzenie czy rezerwacja nie ma już podanego statusu
+    if s_curr_status = a_status then
+    RAISE_APPLICATION_ERROR(-20001, 'Rezerwacja ma już ten status.');
+      end if;
+
+    if a_status = 'C' then -- anulowanie rezerwacji
+      update RESERVATION set STATUS = a_status where RESERVATION_ID = a_reservation_id;
+      DBMS_OUTPUT.PUT_LINE('Twoja rezerwacja została anulowana.');
+      return;
+    end if;
+
+    if s_curr_status = 'C' then
+      update RESERVATION set STATUS = a_status where RESERVATION_ID = a_reservation_id;
+      DBMS_OUTPUT.PUT_LINE('Status twojej rezerwacji został zaaktualizowany.');
+      return;
+    end if;
+
+
+    if a_status = 'P' then
+      update RESERVATION set STATUS = a_status where RESERVATION_ID = a_reservation_id;
+      DBMS_OUTPUT.PUT_LINE('Twoje miejsce jest już potwierdzone i zapłacone.');
+    end if;
+  end;
 ```
 ---
 
 ## Zadanie 6.
 
+##### Polecenie dodające nową kolumne do `Trip`
+```sql
+ALTER TABLE trip
+ADD no_available_places INT;
+```
+
+##### Procedura do aktualizowania pola `no_available_places` dla danego `trip_id` i wywołanie jej dla kolejnych wierszy
+
+```sql
+CREATE OR REPLACE PROCEDURE p_update_no_available_places(a_trip_id VARCHAR) AS
+BEGIN
+    UPDATE TRIP
+    SET no_available_places =
+        MAX_NO_PLACES - (
+            SELECT COUNT(*)
+            FROM reservation
+            WHERE trip_id = a_trip_id
+            AND status IN ('P', 'N')
+        )
+    WHERE trip_id = a_trip_id;
+END p_update_no_available_places;
+
+
+  DECLARE
+      CURSOR c_trips IS
+          SELECT trip_id FROM trip;
+  BEGIN
+      FOR trip_rec IN c_trips LOOP
+          p_update_no_available_places(trip_rec.trip_id);
+      END LOOP;
+  END;
+```
+
+##### Uproszczenie widoków:
+```sql
+CREATE OR REPLACE VIEW VW_TRIP_6 AS
+SELECT T.TRIP_ID, T.COUNTRY, T.TRIP_DATE, T.TRIP_NAME, T.MAX_NO_PLACES, T.NO_AVAILABLE_PLACES
+FROM TRIP T;
+```
+
+
+## Zadanie 6a.
+#### Na koniec każdej procedury wywołujemy procedure `P_UPDATE_NO_AVAILABLE_PLACES(a_trip_id);` aktualizującą liczbę wolnych miejsc.
 
 #### Modyfikacja procedury p_add_reservation:
 ```sql
-create or replace procedure p_add_reservation_6(a_trip_id int, a_person_id int)
+create or replace procedure p_add_reservation_6a(a_trip_id int, a_person_id int)
 as
   s_trip_date date;
   s_count int;
@@ -461,11 +729,10 @@ begin
     values (a_trip_id, a_person_id, 'N')
     returning RESERVATION_ID into s_reservation_id;
 
-    -- Wstawienie rekordu do LOG
-  insert into LOG (RESERVATION_ID, LOG_DATE, STATUS)
-    values (s_reservation_id, SYSDATE, 'N');
-
     DBMS_OUTPUT.PUT_LINE('Rezerwacja została pomyślnie dodana.');
+
+  P_UPDATE_NO_AVAILABLE_PLACES(a_trip_id);
+
 exception
  when others then rollback;
         DBMS_OUTPUT.PUT_LINE('Wystąpił błąd: ' || SQLERRM);
@@ -474,13 +741,68 @@ end;
 
 #### Modyfikacja procedury p_modify_reservation_status:
 ```sql
+create or replace procedure p_modify_reservation_status_6a(a_reservation_id int, a_status char)
+as
+  s_trip_id int;
+  s_curr_status char;
+  s_available_places int;
+begin
+  -- Poprawność argumentu a_status
+  if a_status not in ('N', 'P', 'C') then
+  RAISE_APPLICATION_ERROR(-20001, 'Niepoprawny status.');
+    end if;
 
+
+    -- Pobranie TRIP_ID i STATUS
+  select TRIP_ID, STATUS into s_trip_id, s_curr_status
+    from RESERVATION where RESERVATION_ID = a_reservation_id;
+
+  select NO_AVAILABLE_PLACES into s_available_places
+  from TRIP where TRIP_ID = s_trip_id;
+
+
+
+    -- Sprawdzenie istnienia rezerwacji
+  if s_trip_id is null then
+  RAISE_APPLICATION_ERROR(-20002, 'Rezerwacja o podanym ID nie istnieje.');
+    end if;
+
+    -- Sprawdzenie czy rezerwacja nie ma już podanego statusu
+  if s_curr_status = a_status then
+  RAISE_APPLICATION_ERROR(-20003, 'Rezerwacja ma już ten status.');
+    end if;
+
+  if a_status = 'C' then -- anulowanie rezerwacji
+    update RESERVATION set STATUS = a_status where RESERVATION_ID = a_reservation_id;
+    DBMS_OUTPUT.PUT_LINE('Twoja rezerwacja została anulowana.');
+    P_UPDATE_NO_AVAILABLE_PLACES(s_trip_id);
+    return;
+  end if;
+
+  if s_curr_status = 'C' then
+    if s_available_places <= 0 then
+        RAISE_APPLICATION_ERROR(-20004, 'Brak wolnych miejsc');
+    end if;
+
+    update RESERVATION set STATUS = a_status where RESERVATION_ID = a_reservation_id;
+    DBMS_OUTPUT.PUT_LINE('Status twojej rezerwacji został zaaktualizowany.');
+    P_UPDATE_NO_AVAILABLE_PLACES(s_trip_id);
+    return;
+  end if;
+
+
+  if a_status = 'P' then
+    update RESERVATION set STATUS = a_status where RESERVATION_ID = a_reservation_id;
+    DBMS_OUTPUT.PUT_LINE('Twoje miejsce jest już potwierdzone i zapłacone.');
+    P_UPDATE_NO_AVAILABLE_PLACES(s_trip_id);
+  end if;
+end;
 ```
 
 
 #### Modyfikacja procedury p_modify_max_no_places:
 ```sql
-create or replace procedure p_modify_max_no_places_6(a_trip_id int, a_max_no_places int)
+create or replace procedure p_modify_max_no_places_6a(a_trip_id int, a_max_no_places int)
 as
   s_count int;
   s_available_places int;
@@ -513,15 +835,13 @@ begin
     SET MAX_NO_PLACES = a_max_no_places,
         NO_AVAILABLE_PLACES = s_available_places - s_max_no_places + a_max_no_places
     WHERE TRIP_ID = a_trip_id;
+    
+    P_UPDATE_NO_AVAILABLE_PLACES(a_trip_id);
 exception
  when others then rollback;
         raise;
 end;
 ```
-
-
-## Zadanie 6a.
-
 
 ## Zadanie 6b.
 

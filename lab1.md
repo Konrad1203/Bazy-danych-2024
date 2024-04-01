@@ -4,10 +4,19 @@ widoki, funkcje, procedury, triggery ćwiczenie
 
 
 ## Zadanie 0.
-  Skomentuj dzialanie transakcji. Jak działa polecenie commit, rollback?. Co się dzieje w przypadku wystąpienia błędów podczas wykonywania
-transakcji? Porównaj sposób programowania operacji wykorzystujących transakcje w Oracle PL/SQL ze znanym ci systemem/językiem MS
-Sqlserver T-SQL
+  Skomentuj dzialanie transakcji. Jak działa polecenie commit, rollback?. Co się dzieje w przypadku wystąpienia błędów podczas wykonywania transakcji? Porównaj sposób programowania operacji wykorzystujących transakcje w Oracle PL/SQL ze znanym ci systemem/językiem MS Sqlserver T-SQL:
 
+`Transakcje` w systemach baz danych są niepodzielnymi jednostkami operacji, które zapewniają integralność danych poprzez atomowość, spójność, izolację i trwałość. Rozpoczynając, wykonując i zatwierdzając lub cofając grupę operacji, transakcje gwarantują, że baza danych pozostaje w spójnym stanie, nawet w przypadku awarii systemu. Ich działanie zapewnia niezawodność i integralność operacji na danych.
+
+`Commit`
+Jeśli wszystkie operacje zostały wykonane poprawnie, transakcja jest zatwierdzana za pomocą polecenia `commit`, co powoduje trwałe zapisanie zmian w bazie danych.
+
+`Rollback`
+Jeśli wystąpił błąd lub użytkownik zdecyduje się na anulowanie transakcji, można użyć polecenia `rollback`, aby cofnąć wszystkie zmiany wprowadzone w trakcie transakcji.
+
+Można użyć bloków BEGIN ... EXCEPTION ... END do przechwytywania i obsługi błędów. W przypadku wystąpienia błędu, wykonanie transakcji może być przerwane, a transakcja może zostać automatycznie cofnięta (rollback), chyba że została zdefiniowana obsługa błędów, która określa, jak reagować na dany rodzaj błędu.
+
+W Oracle PL/SQL i MS SQL Server T-SQL programowanie operacji wykorzystujących transakcje jest podobne pod względem koncepcji i celów. Oba języki umożliwiają rozpoczęcie, zatwierdzenie lub cofnięcie transakcji za pomocą poleceń BEGIN TRANSACTION, COMMIT i ROLLBACK. Jednak w Oracle PL/SQL często używa się bloków BEGIN ... EXCEPTION ... END do obsługi błędów, podczas gdy w T-SQL wykorzystuje się bloki BEGIN TRY ... END TRY; BEGIN CATCH ... END CATCH; dla tego samego celu
 
 ## Zadanie 1. Widoki
   vw_reservation widok łączy dane z tabel: trip, person, reservation

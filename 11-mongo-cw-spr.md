@@ -378,19 +378,70 @@ db.orders.aggregate([
 ```
 ![alt text](zad3_agregate.png)
 
+
+#### Modyfikowanie i usuwamie
 ```js
 db.clients.updateOne(
     { Client_id: 1 },
     {
         $set: { 
-            Address: "New Address" 
+            Adress: "New Address" 
         }
     }
 )
+```
+![alt text](zad3_mod.png)
 
+```js
+db.orders.deleteOne({ Order_id: 4 })
 ```
 
+<!-- tu zdj po usunieciu -->
+
+#### Operacje wyszukiwania dokumentów
+```js
+db.orders.find({ Products: 2 })
+```
+Wyświetla zamówienia które posiadają produkt o id równym 2
+
+![find](zad3_find.png)
+
 ---
+
+```js
+db.orders.find({ "Products": { $elemMatch: { $size: { $gte: 2 } } } })
+```
+Wyświtla zamówienia, które zawierają co najmniej 2 produkty
+
+![alt text](zad3_find2.png)
+
+--- 
+
+```js
+db.orders.aggregate([
+  {
+    $lookup: {
+      from: "clients",
+      localField: "Client_id",
+      foreignField: "Client_id",
+      as: "client_info"
+    }
+  }
+])
+```
+Wyświetla zamówienia wraz z danymi o kliencie
+
+![alt text](zad3_find3.png)
+
+---
+
+```js
+db.clients.find().sort({ LastName: 1, FirstName: 1 })
+```
+
+Wyświetla posortowanych klientow
+
+![alt text](zad3_find4.png)
 
 Ćwiczenie przeznaczone jest do wykonania podczas zajęć. Pod koniec zajęć należy przesłać wyniki prac
 

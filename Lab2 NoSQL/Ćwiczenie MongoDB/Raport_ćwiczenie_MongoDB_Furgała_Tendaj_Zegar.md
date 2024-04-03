@@ -118,12 +118,18 @@ Przetestuj działanie operacji
 
 ## Zadanie 2  - rozwiązanie
 
-#### Analiza bazy sample_mflix z atlas samples
+> Wyniki: 
+- Do wykonania importu Atlas Sample wykorzystujemy komendy w formie
+  
+  ```
+  mongorestore --uri="mongodb+srv://username:password@clustername" --archive=path/to/folder
+  ```
+>
+- Analizujemy baze sample_mflix z atlas samples
 
-![collections](img\collections.png)
+![alt text](img\mflix1.png)
 
 - W bazie mflix istnieją powiązania między różnymi kolekcjami. Na przykład, recenzja jest powiązana z filmem poprzez identyfikator filmu.
-![connection](img\connection.png)
 
 - poniżej wyświetlony fragment kolekcji movies
 
@@ -131,10 +137,66 @@ Przetestuj działanie operacji
 use sample_mflix
 db.movies.find()
 ```
-![alt text](img\movies.png)
+``` json
+  {
+    _id: ObjectId("573a1390f29313caabcd516c"),
+    plot: 'Original advertising for the film describes it as a drama of primitive life on the shores of the North Pacific...',
+    genres: [ 'Drama', 'History' ],
+    runtime: 65,
+    cast: [
+      'Stanley Hunt',
+      'Sarah Constance Smith Hunt',
+      'Mrs. George Walkus',
+      "Paddy 'Malid"
+    ],
+    num_mflix_comments: 1,
+    poster: 'https://m.media-amazon.com/images/M/MV5BMjE3MjAyNzM5NV5BMl5BanBnXkFtZTgwMjA5OTg5NjE@._V1_SY1000_SX677_AL_.jpg',
+    title: 'In the Land of the Head Hunters',
+    lastupdated: '2015-09-16 12:11:37.770000000',
+    languages: [ 'English' ],
+    released: ISODate("1914-12-07T00:00:00.000Z"),
+    directors: [ 'Edward S. Curtis' ],
+    writers: [ 'Edward S. Curtis (story)' ],
+    awards: { wins: 1, nominations: 0, text: '1 win.' },
+    year: 1914,
+    imdb: { rating: 5.8, votes: 223, id: 4150 },
+    countries: [ 'USA' ],
+    type: 'movie',
+    tomatoes: {
+      viewer: { rating: 2.7, numReviews: 64, meter: 18 },
+      dvd: ISODate("2000-08-15T00:00:00.000Z"),
+      website: 'http://www.milestonefilms.com/',
+      production: 'World Film Corporation',
+      lastUpdated: ISODate("2015-08-18T19:21:12.000Z")
+    }
+  },
+```
 
 - Kolekcja ta zawiera dokumenty reprezentujące pojedyncze filmy. Każdy dokument zawiera różne pola opisujące film, takie jak tytuł, rok produkcji, gatunek, lista obsady, reżyser itp.
 
+- Struktura jest elastyczna i można ją rozszerzyć o dodatkowe pola. Zawiera zagnieżdżone dokumenty i tablice.
+  
+- Analizujemu "business" z bazy Yelp
+- Przykładowy dokument prezentuje się następująco:
+  
+  ``` json
+  {
+  "_id": "ObjectId",
+  "name": "Business Name",
+  "address": {
+    "street": "Street Name",
+    "city": "City Name",
+    "state": "State Name",
+    "zip": "Zip Code"
+  },
+  "categories": ["Category 1", "Category 2"],
+  "stars": 4.5,
+  "review_count": 100
+    }
+  ```
+- W bazie Yelp dane są przechowywane w jednym dokumencie, co może utrudniać aktualizację danych, ale przyspiesza odczyty.
+- Dokumenty zawierają bogate informacje o firmach, takie jak adres, kategorie, gwiazdki i liczba recenzji.
+- Zawiera zagnieżdżone dokumenty i tablice.
 
 ---
 

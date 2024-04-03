@@ -118,13 +118,12 @@ Przetestuj działanie operacji
 
 ## Zadanie 2  - rozwiązanie
 
-> Wyniki: 
->
->Analiza bazy sample_mflix z atlas samples
+#### Analiza bazy sample_mflix z atlas samples
 
-![alt text](img\image.png)
+![collections](img\collections.png)
 
 - W bazie mflix istnieją powiązania między różnymi kolekcjami. Na przykład, recenzja jest powiązana z filmem poprzez identyfikator filmu.
+![connection](img\connection.png)
 
 - poniżej wyświetlony fragment kolekcji movies
 
@@ -132,7 +131,7 @@ Przetestuj działanie operacji
 use sample_mflix
 db.movies.find()
 ```
-![alt text](img\image-1.png)
+![alt text](img\movies.png)
 
 - Kolekcja ta zawiera dokumenty reprezentujące pojedyncze filmy. Każdy dokument zawiera różne pola opisujące film, takie jak tytuł, rok produkcji, gatunek, lista obsady, reżyser itp.
 

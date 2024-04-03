@@ -1,13 +1,10 @@
 # Dokumentowe bazy danych – MongoDB
 
-ćwiczenie 1
-
-
----
+## ćwiczenie 1
 
 **Imiona i nazwiska autorów:** Tomasz Furgała, Łukasz Zegar, Konrad Tendaj
 
---- 
+---
 
 # Zadanie 1 - połączenie z serwerem bazy danych
 
@@ -40,9 +37,15 @@ Z danymi użytkownika utworzonemu w bazie Atlas.
 
 Korzystamy z `use my_db`, które utworzy nam bazę danych jeżeli taka nie istnieje.
 
-Dodajemy dane:  
+Dodajemy przykładowe dane:  
 ```js
-db.students.insertOne({nr_albumu: 111, Imie: "Jan", Nazwisko: "Kowalski"})
+db.students.insertOne(
+  {
+    nr_albumu: 111,
+    Imie: "Jan",
+    Nazwisko: "Kowalski"
+  }
+)
 
 db.students.insertMany([  
  {nr_albumu: 112, Imie: "Natalia", Nazwisko: "Robak"},   
@@ -50,7 +53,10 @@ db.students.insertMany([
  {nr_albumu: 114, Imie: "Julia", Nazwisko: "Mazowiecka"}  
 ]);
 ```
-![alt text](zad1.png)
+
+Korzystamy z find'a na kolekcji students:
+
+![alt text](img\zad1.png)
 ---
 
 
@@ -116,7 +122,7 @@ Przetestuj działanie operacji
 >
 >Analiza bazy sample_mflix z atlas samples
 
-![alt text](image.png)
+![alt text](img\image.png)
 
 - W bazie mflix istnieją powiązania między różnymi kolekcjami. Na przykład, recenzja jest powiązana z filmem poprzez identyfikator filmu.
 
@@ -126,7 +132,7 @@ Przetestuj działanie operacji
 use sample_mflix
 db.movies.find()
 ```
-![alt text](image-1.png)
+![alt text](img\image-1.png)
 
 - Kolekcja ta zawiera dokumenty reprezentujące pojedyncze filmy. Każdy dokument zawiera różne pola opisujące film, takie jak tytuł, rok produkcji, gatunek, lista obsady, reżyser itp.
 
@@ -149,14 +155,10 @@ Stwórz nową bazę danych
 
 ## Zadanie 3  - rozwiązanie
 
-> Wyniki: 
-> 
-> przykłady, kod, zrzuty ekranów, komentarz ...
+Tworzymy bazę danych poleceniem: `use TF_orders`
 
+Dodajemy dane o klientach:
 ```js
-
-> use TF_orders
-
 db.clients.insertOne({
     Client_id: 1,
     FirstName: "John",
@@ -179,45 +181,38 @@ db.clients.insertMany([{
 ])
 ```
 
-![clients](zad3_clients.png)
+![clients](img\zad3_clients.png)
 
+Dodajemy dane zamówień
 ```js
-
 db.orders.insertOne({
     Order_id: 1,
     Client_id: 1,
     Order_date: new Date("2024-04-03"),
-    Products: [
-		1
-    ]
+    Products: [ 1 ]
 })
 
 db.orders.insertMany([{
     Order_id: 2,
     Client_id: 2,
     Order_date: new Date("2024-04-02"),
-    Products: [
-		1, 2, 5
-    ]
+    Products: [ 1, 2, 5 ]
 },
 {
 	Order_id: 3,
     Client_id: 1,
     Order_date: new Date("2024-04-10"),
-    Products: [
-		3, 6
-    ]	
+    Products: [ 3, 6 ]	
 },
 {
 	Order_id: 4,
     Client_id: 3,
     Order_date: new Date("2024-02-25"),
-    Products: [
-		2, 6
-    ]
+    Products: [ 2, 6 ]
 }])
 ```
 
+Dodajemy dokument z produktami:
 ```js
 db.products.insertMany([
 {
@@ -363,6 +358,7 @@ db.products.insertMany([
 
 ```
 
+#### Przykładowa agregacja łącząca orders z clients, wyświetlająca dane o kliencie przy zamówieniu:
 ```js
 db.orders.aggregate([
   {
@@ -375,10 +371,10 @@ db.orders.aggregate([
   }
 ])
 ```
-![alt text](zad3_agregate.png)
+![alt text](img\zad3_agregate.png)
 
 
-#### Modyfikowanie i usuwamie
+#### Modyfikowanie danych
 ```js
 db.clients.updateOne(
     { Client_id: 1 },
@@ -389,8 +385,9 @@ db.clients.updateOne(
     }
 )
 ```
-![alt text](zad3_mod.png)
+![alt text](img\zad3_mod.png)
 
+#### Usuwanie danych
 ```js
 db.orders.deleteOne({ Order_id: 4 })
 ```
@@ -403,19 +400,21 @@ db.orders.find({ Products: 2 })
 ```
 Wyświetla zamówienia które posiadają produkt o id równym 2
 
-![find](zad3_find.png)
+![find](img\zad3_find.png)
 
 ---
 
+
+Wyświetlanie zamówień, które zawierają co najmniej 2 produkty
 ```js
 db.orders.find({ "Products": { $elemMatch: { $size: { $gte: 2 } } } })
 ```
-Wyświtla zamówienia, które zawierają co najmniej 2 produkty
-
-![alt text](zad3_find2.png)
+![alt text](img\zad3_find2.png)
 
 --- 
 
+
+#### Wyświetla zamówienia wraz z danymi o kliencie
 ```js
 db.orders.aggregate([
   {
@@ -428,9 +427,7 @@ db.orders.aggregate([
   }
 ])
 ```
-Wyświetla zamówienia wraz z danymi o kliencie
-
-![alt text](zad3_find3.png)
+![alt text](img\zad3_find3.png)
 
 ---
 
@@ -440,9 +437,7 @@ db.clients.find().sort({ LastName: 1, FirstName: 1 })
 
 Wyświetla posortowanych klientow
 
-![alt text](zad3_find4.png)
-
-Ćwiczenie przeznaczone jest do wykonania podczas zajęć. Pod koniec zajęć należy przesłać wyniki prac
+![alt text](img\zad3_find4.png)
 
 Punktacja:
 

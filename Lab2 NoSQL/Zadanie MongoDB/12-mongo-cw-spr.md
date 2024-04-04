@@ -67,8 +67,151 @@ db.business.find({
 
 ```js
 2.
+db.tip.aggregate([
+  {
+    $match: {
+      date: { $gte: "2012-01-01", $lt: "2013-01-01" }
+    }
+  },
+  {
+    $group: {
+      _id: "$business_id",
+      tipCount: { $sum: 1 }
+    }
+  },
+  {
+    $lookup: {
+      from: "business",
+      localField: "_id",
+      foreignField: "business_id",
+      as: "business_info"
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      business_name: { $arrayElemAt: ["$business_info.name", 0] },
+      tipCount: 1
+    }
+  },
+  {
+    $sort: {
+      tipCount: -1
+    }
+  }
+])
+```
+### UWAGA!
+#### Ze względu na zbyt duży rozmiar pliku `trip.json`, co za tym idzie powyższe polecenie wykonywało się dość długo, zaimportowaliśmy tylko pierwsze 2000 dokumentów w celu przetestowania agragacji.
+
+![alt text](img/1_2.png)
+```js
+3.
+db.review.aggregate([
+  {
+    $group: {
+      _id: null,
+      total_funny_reviews: {
+        $sum: { $cond: [{ $gt: ["$votes.funny", 0] }, 1, 0] }
+      },
+      total_useful_reviews: {
+        $sum: { $cond: [{ $gt: ["$votes.useful", 0] }, 1, 0] }
+      },
+      total_cool_reviews: {
+        $sum: { $cond: [{ $gt: ["$votes.cool", 0] }, 1, 0] }
+      }
+    }
+  }
+])
+```
+#### Tutaj również zaimportowaliśmy mniej danych
+
+![alt text](img/1_3.png)
+
+
+```js
+4.
+db.user.aggregate([
+  {
+    $match: {
+      $or: [
+        { "votes.funny": { $eq: 0 } },
+        { "votes.useful": { $eq: 0 } }
+      ]
+    }
+  },
+  {
+    $sort: { "name": 1 }
+  }
+])
+```
+#### Tutaj również zaimportowaliśmy mniej danych
+![alt text](img/1_4.png)
+
+
+```js
+5a
+db.review.aggregate([
+  {
+    $group: {
+      _id: "$business_id",
+      average_rating: { $avg: "$stars" }
+    }
+  },
+  {
+    $match: {
+      average_rating: { $gt: 3 }
+    }
+  },
+  {
+    $sort: { _id: 1 }
+  }
+])
+```
+
+![alt text](img/1_5a.png)
+
+
+```js
+db.review.aggregate([
+  {
+    $group: {
+      _id: "$business_id",
+      average_rating: { $avg: "$stars" }
+    }
+  },
+  {
+    $match: {
+      average_rating: { $gt: 3 }
+    }
+  },
+  {
+    $lookup: {
+      from: "business",
+      localField: "_id",
+      foreignField: "business_id",
+      as: "business_info"
+    }
+  },
+  {
+    $unwind: "$business_info" 
+  },
+  {
+    $project: {
+      company_name: "$business_info.name", 
+      average_rating: 1
+    }
+  },
+  {
+    $sort: { company_name: 1 } 
+  }
+])
 
 ```
+
+![alt text](img/1_5b.png)
+
+---
 
 # Zadanie 2 - modelowanie danych
 

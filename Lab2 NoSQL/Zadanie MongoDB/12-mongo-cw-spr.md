@@ -246,12 +246,113 @@ Do sprawozdania należy kompletny zrzut wykonanych/przygotowanych baz danych (ta
 
 ## Zadanie 2  - rozwiązanie
 
-> Wyniki: 
-> 
-> przykłady, kod, zrzuty ekranów, komentarz ...
+Do realizacji wybraliśmy problem B, firmy wycieczki, osoby.
+### a)
+Rozważamy dwa róże podejścia w budowaniu struktury bazy danych.
+Pierwsze składa się z dwóch kolekcji : Firmy i Osoby, Firmy to kolekcja która oprócz danych dotyczących firmy ( np nazwa, adres) posiada dokumenty osadzone w postaci tablicy wycieczek oferowanych przez firmę, każda wycieczka posiada tablice rezerwacji, Osoby to kolekcja z danymi o uczestnikach wycieczek, również posiada dane osadzone - tablice rezerwowanych wycieczek przez daną osobę.
 
-```js
---  ...
+Zalety: 
+- struktura prosta do czytania, zrozumienia jak i do implementacji
+- korzystamy z możliwości osadzania dokumentów z różnych kolekcji w jednym dokumencie
+- możemy w łatwy sposób pozyskać wszystkie potrzbne informacje np o osobie X jednym zapytaniem
+
+Wady:
+- Utrudnione akutalizowanie/dodanie danych
+- Prowadzi do powielania danych
+
+Drugi wariant to rozdzielenie wyżej opisanych dokumentów osadzonych do osobnych kolekcji. Wydzielilibyśmy kolekcje Rezerwacje i Wycieczki. To podejście wymaga użycia referencji w każdej kolekcji.
+
+Zalety:
+- minimalizacjia powielania danych
+- ułatwiona aktualizacja danych
+- lepsza skalowalność
+
+Wady:
+- zapytania są bardziej skomlikowane, złożone
+- duża liczba referencji może spowodować spadek wydajności
+
+Na potrzeby tego zadania lepiej sprawdzi się wariant pierwszy, z dwoma większymi kolekcjami. Ułatwi nam to tworzenie dokumentów oraz konstrukcje zapytań.
+
+Poniżej przedstawiamy budowę kolekcji.
+### Companies:
+- _id
+- name
+- address
+- trips
+    - trip_id
+    - trip_name
+    - price
+    - reservations
+        - person_id
+### Persons:
+- _id
+- fristname
+- lastname
+- reservations
+    - company_id
+    - trip_id
+    - trip_price
+
+Przykładowe dane dla kolekcji Companies:
+
+
+
+
+```JSON
+  {
+  "_id": {
+    "$oid": "661db47b0afa7327f060fedb"
+  },
+  "name": "Wakacje.pl",
+  "adres": "Kraków, ul. Wakacyjna 1",
+  "trips": [
+    {
+      "trip_id": "1",
+      "trip_name": "Wycieczka do Gdańska",
+      "price": 1500,
+      "reservations": [
+        {
+          "id_osoby": "1"
+        },
+        {
+          "id_osoby": "2"
+        }
+      ]
+    }
+  ]
+}
+
+
+```
+
+Przykładowe dane dla kolekcji Persons:
+
+
+
+
+```JSON
+  {
+  "_id": "1",
+  "name": "Wakacje.pl",
+  "adres": "Kraków, ul. Wakacyjna 1",
+  "trips": [
+    {
+      "trip_id": "1",
+      "trip_name": "Wycieczka do Gadńska",
+      "price": 1500,
+      "reservations": [
+        {
+          "id_osoby": "1"
+        },
+        {
+          "id_osoby": "2"
+        }
+      ]
+    }
+  ]
+}
+
+
 ```
 
 ---

@@ -293,6 +293,8 @@ Poniżej przedstawiamy budowę kolekcji.
     - trip_id
     - trip_price
 
+Kolekcje wypełniamy odpowiednio przygotowanymi danymi w formacie JSON. Wykorzystujemy narzędzie MongodDB Compass.
+
 Przykładowe dane dla kolekcji Companies:
 
 
@@ -332,22 +334,14 @@ Przykładowe dane dla kolekcji Persons:
 
 ```JSON
   {
-  "_id": "1",
-  "name": "Wakacje.pl",
-  "adres": "Kraków, ul. Wakacyjna 1",
-  "trips": [
+  "_id": 1,
+  "firstname": "Jan",
+  "lastname": "Kowalski",
+  "reservations": [
     {
-      "trip_id": "1",
-      "trip_name": "Wycieczka do Gadńska",
-      "price": 1500,
-      "reservations": [
-        {
-          "id_osoby": "1"
-        },
-        {
-          "id_osoby": "2"
-        }
-      ]
+      "company_id": 1,
+      "trip_id": 1,
+      "trip_price": 1500
     }
   ]
 }

@@ -246,10 +246,11 @@ Do sprawozdania należy kompletny zrzut wykonanych/przygotowanych baz danych (ta
 
 ## Zadanie 2  - rozwiązanie
 
-Do realizacji wybraliśmy problem B, firmy wycieczki, osoby.
-### a)
+Do realizacji wybraliśmy **problem B**, firmy wycieczki, osoby.
+#### a)
 Rozważamy dwa róże podejścia w budowaniu struktury bazy danych.
-Pierwsze składa się z dwóch kolekcji : Firmy i Osoby, Firmy to kolekcja która oprócz danych dotyczących firmy ( np nazwa, adres) posiada dokumenty osadzone w postaci tablicy wycieczek oferowanych przez firmę, każda wycieczka posiada tablice rezerwacji, Osoby to kolekcja z danymi o uczestnikach wycieczek, również posiada dane osadzone - tablice rezerwowanych wycieczek przez daną osobę.
+
+Pierwsze składa się z dwóch kolekcji : Firmy, Wycieczki i Osoby, Firmy to kolekcja, która oprócz danych dotyczących firmy (np nazwa, adres) posiada dokumenty osadzone w postaci tablicy wycieczek oferowanych przez firmę, każda wycieczka posiada tablice rezerwacji. Osoby to kolekcja z danymi o uczestnikach wycieczek, również posiada dane osadzone - tablice rezerwowanych wycieczek przez daną osobę.
 
 Zalety: 
 - struktura prosta do czytania, zrozumienia jak i do implementacji
@@ -279,19 +280,43 @@ Poniżej przedstawiamy budowę kolekcji.
 - name
 - address
 - trips
-    - trip_id
-    - trip_name
-    - price
-    - reservations
-        - person_id
+  - trip_id
+  - trip_name
+  - trip_date
+  - price
+  - reservations
+    - person_id
+    
 ### Persons:
 - _id
 - fristname
 - lastname
-- reservations
-    - company_id
-    - trip_id
-    - trip_price
+- trips
+  - trip_id
+
+## Wariant drugi:
+### Companies:
+- _id
+- name
+- address
+- trips
+  - trip_id
+
+### Persons:
+- _id
+- fristname
+- lastname
+- trips
+  - trip_id
+
+### Trips:
+- _id
+- trip_name
+  - trip_date
+  - price
+  - reservations
+    - person_id
+
 
 Kolekcje wypełniamy odpowiednio przygotowanymi danymi w formacie JSON. Wykorzystujemy narzędzie MongodDB Compass.
 

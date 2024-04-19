@@ -246,7 +246,7 @@ w szczególności dokument: `1_modyf.pdf`
 `Transakcje` w systemach baz danych są niepodzielnymi jednostkami operacji, które zapewniają integralność danych poprzez atomowość, spójność, izolację i trwałość. Rozpoczynając, wykonując i zatwierdzając lub cofając grupę operacji, transakcje gwarantują, że baza danych pozostaje w spójnym stanie, nawet w przypadku awarii systemu. Ich działanie zapewnia niezawodność i integralność operacji na danych.
 
 `Commit`
-Jeśli wszystkie operacje zostały wykonane poprawnie, transakcja jest zatwierdzana za pomocą polecenia `commit`, co powoduje trwałe zapisanie zmian w bazie danych Polecenie `commit` kończy bieżącą transakcję, co oznacza, że ​​nie można już wycofać dokonanych zmian. Jest to ostateczna operacja potwierdzająca, że wszystkie operacje zostały wykonane zgodnie z oczekiwaniami i mogą być trwale zapisane w bazie danych.
+Jeśli wszystkie operacje zostaną wykonane poprawnie (bez rzucenia błędu), za pomocą polecenia `commit` możemy zatwiedzić transakcję, co powoduje trwałe zapisanie zmian w bazie danych Polecenie `commit` kończy bieżącą transakcję, co oznacza, że ​​nie można już wycofać dokonanych zmian. Jest to ostateczna operacja potwierdzająca, że wszystkie operacje zostały wykonane zgodnie z oczekiwaniami i mogą być trwale zapisane w bazie danych.
 
 `Rollback`
 Jeśli wystąpił błąd lub użytkownik zdecyduje się na anulowanie transakcji, można użyć polecenia `rollback`, aby cofnąć wszystkie zmiany wprowadzone w trakcie transakcji.
@@ -425,7 +425,7 @@ select f_trip_participants(1) from dual;
 ```sql
 select f_trip_participants(-1) from dual;
 ```
-![alt f_trip_participants](f_trip_participants2.png)
+![alt f_trip_participants](img/f_trip_participants2.png)
 
 ---
 
@@ -657,7 +657,6 @@ BEGIN
 
 EXCEPTION
     WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Wystąpił inny błąd: ' || SQLERRM);
         RAISE_APPLICATION_ERROR(-20000, 'Wystąpił inny błąd: ' || SQLERRM);
 
 END;
@@ -743,7 +742,6 @@ BEGIN
 
 EXCEPTION
     WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Wystąpił inny błąd: ' || SQLERRM);
         RAISE_APPLICATION_ERROR(-20000, 'Wystąpił inny błąd: ' || SQLERRM);
 
 END;
@@ -779,7 +777,8 @@ BEGIN
     END IF;
 
     IF f_get_reserved_places(a_trip_id) > a_max_no_places THEN
-        RAISE_APPLICATION_ERROR(-20003, 'Nie można zmniejszyć liczby miejsc poniżej liczby zarezerwowanych');
+        RAISE_APPLICATION_ERROR(-20003, 'Nie można zmniejszyć 
+        liczby miejsc poniżej liczby zarezerwowanych');
     END IF;
 
     UPDATE TRIP
@@ -788,7 +787,6 @@ BEGIN
 
 EXCEPTION
     WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Wystąpił inny błąd: ' || SQLERRM);
         RAISE_APPLICATION_ERROR(-20000, 'Wystąpił inny błąd: ' || SQLERRM);
 
 END;
@@ -911,7 +909,6 @@ BEGIN
 
 EXCEPTION
     WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Wystąpił inny błąd: ' || SQLERRM);
         RAISE_APPLICATION_ERROR(-20000, 'Wystąpił inny błąd: ' || SQLERRM);
 
 END;
@@ -986,7 +983,6 @@ BEGIN
 
 EXCEPTION
     WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Wystąpił inny błąd: ' || SQLERRM);
         RAISE_APPLICATION_ERROR(-20000, 'Wystąpił inny błąd: ' || SQLERRM);
 
 END;	
@@ -1111,7 +1107,6 @@ BEGIN
 
 EXCEPTION
     WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Wystąpił inny błąd: ' || SQLERRM);
         RAISE_APPLICATION_ERROR(-20000, 'Wystąpił inny błąd: ' || SQLERRM);
 END;
 ```
@@ -1141,7 +1136,6 @@ BEGIN
 
 EXCEPTION
     WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Wystąpił inny błąd: ' || SQLERRM);
         RAISE_APPLICATION_ERROR(-20000, 'Wystąpił inny błąd: ' || SQLERRM);
 END;
 ```
@@ -1360,7 +1354,6 @@ BEGIN
 
 EXCEPTION
     WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Wystąpił inny błąd: ' || SQLERRM);
         RAISE_APPLICATION_ERROR(-20000, 'Wystąpił inny błąd: ' || SQLERRM);
 END;
 ```
@@ -1389,7 +1382,8 @@ BEGIN
     SELECT NO_AVAILABLE_PLACES INTO s_free_places FROM TRIP WHERE TRIP_ID = a_trip_id;
 
     IF s_free_places > a_max_no_places THEN
-        RAISE_APPLICATION_ERROR(-20003, 'Nie można zmniejszyć liczby miejsc poniżej liczby zarezerwowanych');
+        RAISE_APPLICATION_ERROR(-20003, 'Nie można zmniejszyć 
+        liczby miejsc poniżej liczby zarezerwowanych');
     END IF;
 
     UPDATE TRIP
@@ -1399,7 +1393,6 @@ BEGIN
 
 EXCEPTION
     WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Wystąpił inny błąd: ' || SQLERRM);
         RAISE_APPLICATION_ERROR(-20000, 'Wystąpił inny błąd: ' || SQLERRM);
 END;
 ```
@@ -1443,7 +1436,6 @@ BEGIN
 
 EXCEPTION
     WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Wystąpił inny błąd: ' || SQLERRM);
         RAISE_APPLICATION_ERROR(-20000, 'Wystąpił inny błąd: ' || SQLERRM);
 END;
 ```

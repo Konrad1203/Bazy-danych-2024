@@ -257,13 +257,12 @@ Do realizacji wybraliśmy **problem B**, firmy wycieczki, osoby.
 ## a)
 Rozważamy dwa róże podejścia w budowaniu struktury bazy danych.
 
-**Pierwsze** składa się z trzech kolekcji : `Firmy`, `Wycieczki` i `Osoby`.
+**Pierwsze** składa się z trzech kolekcji: `Firmy`, `Wycieczki` i `Osoby`.
 `Firmy` to kolekcja, która zawiera dane o firmach organizujących wycieczki. Kolekcja `Wycieczki` zawiera informacje o wycieczkach, w tym nazwę, opis, datę, cenę, firmę organizującą, oceny. `Osoby` zawiera informacje o osobach rezerwujących miejsca oraz oceniających wycieczki.
 
 Zalety: 
-- struktura prosta do czytania, zrozumienia jak i do implementacji,
-- korzystamy z możliwości osadzania dokumentów z różnych kolekcji w jednym dokumencie,
-- możemy w łatwy sposób pozyskać wszystkie potrzbne informacje np o osobie X jednym zapytaniem.
+- posiadanie danych w jednej kolekcji może sprawić, że struktura bazy danych będzie prostsza i łatwiejsza do zrozumienia,
+- operacje takie jak indeksowanie, wyszukiwanie i modyfikacja danych mogą być łatwiejsze do przeprowadzenia.
 
 Wady:
 - utrudnione akutalizowanie/dodanie danych,
@@ -271,19 +270,33 @@ Wady:
 - może być trudne do skalowania, gdy baza danych rośnie wraz z liczbą firm, wycieczek i osób.
 
 **Drugi** składa się z czterech kolekcji: `Firmy`, `Wycieczki`, `Osoby` i `Rezerwacje`.
-Kolekcje Firmy, Wycieczki, Osoby będą pełniły taką samą role jak w podejściu pierwszym. Natomiast kolekcja `Rezerwacje` będzie zawierać inforamcje o zapisie danej osoby na wycieczkę.
+`Kolekcje` `Firmy`, `Wycieczki`, Osoby będą pełniły taką samą role jak w podejściu pierwszym. Natomiast kolekcja `Rezerwacje` będzie zawierać inforamcje o zapisie danej osoby na wycieczkę.
 
 Zalety:
 - minimalizacjia powielania danych,
 - ułatwiona aktualizacja danych,
-- lepsza skalowalność.
+- lepsza skalowalność,
+- łatwiejszy dostęp rezerwacji.
 
 Wady:
 - zapytania są bardziej skomlikowane, złożone,
 - duża liczba referencji może spowodować spadek wydajności.
 
 
-### Struktura kolekcji.
+**Trzeci** składa się z dwóch kolekcji: `Osoby` i `Firmy`
+Kolekcja `Osoby` będzie zawierać dane o użytkowanikach, natomiast kolekcja `Firmy` będzie zawierać dane dotyczące firm, a także zagnieżdżone dane o oferowanych wycieczkach i osobach zapisanych na wycieczki.
+
+Zalety:
+- większość danych jest przechowywanych w jednej kolekcji,
+- mniejsza liczba kolekcji oznacza prostszą strukturę danych, co może ułatwić zarządzanie i zrozumienie bazy danych,
+- mniej operacji łączenia danych podczas przetwarzania danych.
+
+Wady:
+- słaba skalowaność,
+- ryzyko niespójności danych,
+- trudności w zapewnieniu spójności danych.
+
+### Struktura kolekcji:
 
 ##### Companies:
 ```json
@@ -302,7 +315,7 @@ Wady:
 ```
 ### Wariant 1:
 
-#### Trips
+#### Tours
 ```json
 {
   "tour_id": "indetyfikator",
@@ -327,7 +340,7 @@ Wady:
 
 ### Wariant 2:
 
-#### Trips
+#### Tours
 ```json
 {
   "tour_id": "indetyfikator",
@@ -354,7 +367,37 @@ Wady:
 }
 ```
 
-W celu przetestowania obu wariantów stworzyliśmy 2 bazy.
+### Wariant 3:
+
+#### Companies
+```json
+{
+  "company_id": "indetyfikator",
+  "company_name": "Nazwa firmy",
+  "tours": [
+    {
+      "tour_name":  "nazwa wycieczki",
+      "date": "data",
+      "price": "Cena",
+      "ratings": [
+        {
+          "user_id": "identyfikator osoby",
+          "rating": "ocena"
+        }
+      ],
+      "reservations": [
+        {
+          "user_id": "identyfikator osoby",
+          "date": "data rezerwacji"
+        },
+      ]
+    }
+  ]
+}
+```
+
+
+W celu przetestowania obu wariantów stworzyliśmy 3 bazy.
 
 ## b)
 
@@ -502,7 +545,325 @@ db.reservations.insertMany([
 ]);
 ```
 
+### Wariant 3:
+
+```mongodb
+db.companies.insertMany([
+  { 
+    company_id: "1", 
+    company_name: "Adventure Excursions Inc.",
+    tours: [
+      {
+        "tour_name": "Excursion to Grand Canyon",
+        "date": "2024-05-15",
+        "price": 150,
+        "ratings": [
+          { "user_id": "105", "rating": 5 }
+        ],
+        "reservations": [
+          { "user_id": "101", "date": "2024-05-10" },
+          { "user_id": "105", "date": "2024-05-14" }
+        ]
+      }
+    ]
+  },
+
+  { 
+    company_id: "2", 
+    company_name: "Exploration Tours Ltd.",
+    tours: [
+      {
+        "tour_name": "Safari Adventure in Africa",
+        "date": "2024-06-20",
+        "price": 300,
+        "ratings": [
+          { "user_id": "106", "rating": 5 },
+          { "user_id": "109", "rating": 5 }
+        ],
+        "reservations": [
+          { "user_id": "108", "date": "2024-06-12" },
+          { "user_id": "109", "date": "2024-06-14" }
+        ]
+      }
+    ]
+  },
+
+  { 
+    company_id: "3", 
+    company_name: "Discover Destinations LLC",
+    tours: [
+      {
+        "tour_name": "Historical Tour in Europe",
+        "date": "2024-07-25",
+        "price": 200,
+        "ratings": [
+          { "user_id": "106", "rating": 4 }
+        ],
+        "reservations": [
+          { "user_id": "106", "date": "2024-07-24" }
+        ]
+      }
+    ]
+  }
+]);
+```
+
 ## c)
+
+#### Lista wycieczek na, które zapisana jest konkretna osboa:
+
+##### Wariant 1:
+```mongodb
+db.tours.aggregate([
+  { 
+    $unwind: "$reservations" 
+  },
+  {
+    $match: {
+      "reservations.user_id": "101"
+    }
+  },
+  {
+    $lookup: {
+      from: "companies",
+      localField: "company_id",
+      foreignField: "company_id",
+      as: "company"
+    }
+  },
+  {
+    $unwind: "$company"
+  },
+  {
+    $lookup: {
+      from: "persons",
+      localField: "reservations.user_id",
+      foreignField: "user_id",
+      as: "user"
+    }
+  },
+  {
+    $unwind: "$user"
+  },
+  {
+    $project: {
+      "_id": 0,
+      "user_name": "$user.name",
+      "tour_id": 1,
+      "tour_name": 1,
+      "date": 1,
+      "price": 1,
+      "company_name": "$company.company_name",
+      "reservation_date": "$reservations.date"
+    }
+  }
+])
+```
+![alt text](img/lista_wycieczek_dla_osoby_w1.png)
+
+##### Wariant 2:
+
+```mongodb
+db.reservations.aggregate([
+  {
+    $match: {
+      user_id: "101" 
+    }
+  },
+  {
+    $lookup: {
+      from: "tours",
+      localField: "tour_id",
+      foreignField: "tour_id",
+      as: "tour_info"
+    }
+  },
+  {
+    $unwind: "$tour_info" 
+  },
+  {
+    $lookup: {
+      from: "persons",
+      localField: "user_id",
+      foreignField: "user_id",
+      as: "user_info"
+    }
+  },
+  {
+    $lookup: {
+      from: "companies",
+      localField: "tour_info.company_id",
+      foreignField: "company_id",
+      as: "company_info"
+    }
+  },
+  {
+    $unwind: "$user_info" 
+  },
+  {
+    $unwind: "$company_info" 
+  },
+  {
+    $project: {
+      _id: 0,
+      tour_id: "$tour_info.tour_id",
+      tour_name: "$tour_info.tour_name",
+      date: "$tour_info.date",
+      price: "$tour_info.price",
+      user_name: "$user_info.name",
+      company_name: "$company_info.company_name",
+      reservation_date: "$date"
+    }
+  }
+])
+```
+![alt text](img/lista_wycieczek_dla_osoby_w2.png)
+
+#### Wariant 3:
+```mongodb
+db.companies.aggregate([
+  {
+    $unwind: "$tours"
+  },
+  {
+    $unwind: "$tours.reservations" 
+  },
+  {
+    $match: {
+      "tours.reservations.user_id": "101" 
+    }
+  },
+  {
+    $lookup: {
+      from: "persons",
+      localField: "tours.reservations.user_id",
+      foreignField: "user_id",
+      as: "user"
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      tour_name: "$tours.tour_name",
+      company_name: "$company_name",
+      date: "$tours.date",
+      price: "$tours.price",
+      user_name: { $arrayElemAt: ["$user.name", 0] }, 
+      reservation_date: "$tours.reservations.date" 
+    }
+  }
+]);
+```
+
+![alt text](img/lista_wycieczek_dla_osoby_w3.png)
+
+
+#### Wyświetla wycieczki, które posiadają co namjmniej jedną ocenę równą 5, wynik sortuje afabetycznie po nazwie wycieczek:
+
+##### Wariant 1:
+```mongodb
+db.tours.aggregate([
+  {
+    $match: {
+      "ratings.rating": { $gte: 5 } 
+    }
+  },
+  {
+    $project: {
+      "_id": 0,
+      "tour_name": 1,
+      "num_of_5_ratings": {
+        $size: { 
+          $filter: {
+            input: "$ratings",
+            as: "rating",
+            cond: { $eq: ["$$rating.rating", 5] }
+          }
+        }
+      }
+    }
+  }
+])
+```
+![alt text](img/rating_5_w1.png)
+
+##### Wariant 2:
+```mongodb
+db.tours.aggregate([
+  {
+    $match: {
+      "ratings.rating": 5 
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      tour_name: 1,
+      num_ratings_5: {
+        $size: {
+          $filter: {
+            input: "$ratings",
+            as: "rating",
+            cond: { $eq: ["$$rating.rating", 5] }
+          }
+        }
+      }
+    }
+  },
+  {
+    $sort: {
+      tour_name: 1 
+    }
+  }
+])
+```
+
+![alt text](img/rating_5_w2.png)
+
+
+##### Wariant 3:
+```mongodb
+db.companies.aggregate([
+  {
+    $unwind: "$tours" 
+  },
+  {
+    $unwind: {
+      path: "$tours.ratings",
+      preserveNullAndEmptyArrays: true
+    } // Rozwijamy tablicę ocen w ramach wycieczki
+  },
+  {
+    $match: {
+      "tours.ratings.rating": { $eq: 5 } 
+    }
+  },
+  {
+    $group: {
+      _id: "$tours.tour_name",
+      count: { $sum: 1 } 
+    }
+  },
+  {
+    $sort: {
+      tour_name: 1 
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      tour_name: "$_id",
+      count_of_5_ratings: "$count"
+    }
+  }
+]);
+```
+![alt text](img/rating_5_w3.png)
+
+
+#### Wnioski:
+Jak widzimy na przykładzie agregacji, w wariancie 3 zapytania wydają się mniej skomplikowane i odrobinę prostsze ze względu przechowywania wiekszości danych w jedenj kolekcji.
+
 
 #### Dodanie nowej rezerwacji:
 
@@ -531,6 +892,75 @@ db.reservations.insertOne({
 });
 ```
 
+##### Wariant 3:
+```mongodb
+db.companies.updateOne(
+  { "company_id": "1" }, // Dopasowujemy firmę pierwszą
+  {
+    $push: {
+      "tours.$[tour].reservations": { "user_id": "103", "date": "2024-05-11" }
+    }
+  },
+  {
+    arrayFilters: [{ "tour.tour_name": "Excursion to Grand Canyon" }] 
+  }
+);
+```
+
+#### Dodanie nowej oceny:
+
+##### Wariant 1:
+
+```mongodb
+db.tours.updateOne(
+  { "tour_id": "1" },
+  { 
+    $push: { 
+      "ratings": {
+        "user_id": "106",
+        "rating": 3
+      } 
+    } 
+  }
+);
+
+```
+
+
+##### Wariant 2:
+
+```mongodb
+db.tours.updateOne(
+  { "tour_id": "1" },
+  { 
+    $push: { 
+      "ratings": { 
+        "user_id": "106",
+        "rating": 3 
+      } 
+    } 
+  }
+)
+```
+
+##### Wariant 3:
+```mongodb
+db.companies.updateOne(
+  { "company_id": "1", "tours.tour_name": "Excursion to Grand Canyon" },
+  {
+    $push: {
+      "tours.$.ratings": { "user_id": "106", "rating": 3 }
+    }
+  }
+);
+```
+
+### Wnioski:
+Dodawanie danych w każdym z wariantów wydaje się być skomplikowane na tym samym poziomie, choć w drugim wariancie jest to bardziej intuicyjne.
+
+## Wnioski ogólne:
+
+Każdy z przedstaionych przez nas wariantów ma swoje zalety i wady, a wybór między nimi zależy od wielu czynników, takich jak rodzaj danych, skala aplikacji, wymagania dotyczące wydajności i skalowalności. 
 
 ---
 

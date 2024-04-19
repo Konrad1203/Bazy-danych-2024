@@ -1,5 +1,7 @@
 # Bazy danych 2024
 
+Dokumentacja projektu w katalogu `Miniprojekt/dokumentacja.md`
+
 1) Skład grupy  
    Tomasz Furgała: furgalat@student.agh.edu.pl  
    Konrad Tendaj: konradtendaj@student.agh.edu.pl  

@@ -255,7 +255,7 @@ Do sprawozdania należy kompletny zrzut wykonanych/przygotowanych baz danych (ta
 
 Do realizacji wybraliśmy **problem B**, firmy wycieczki, osoby.
 ## a)
-Rozważamy dwa róże podejścia w budowaniu struktury bazy danych.
+Rozważamy trzy podejścia w budowaniu struktury bazy danych.
 
 **Pierwsze** składa się z trzech kolekcji: `Firmy`, `Wycieczki` i `Osoby`.
 `Firmy` to kolekcja, która zawiera dane o firmach organizujących wycieczki. Kolekcja `Wycieczki` zawiera informacje o wycieczkach, w tym nazwę, opis, datę, cenę, firmę organizującą, oceny. `Osoby` zawiera informacje o osobach rezerwujących miejsca oraz oceniających wycieczki.
@@ -269,7 +269,7 @@ Wady:
 - prowadzi do powielania danych,
 - może być trudne do skalowania, gdy baza danych rośnie wraz z liczbą firm, wycieczek i osób.
 
-**Drugi** składa się z czterech kolekcji: `Firmy`, `Wycieczki`, `Osoby` i `Rezerwacje`.
+**Drugie** składa się z czterech kolekcji: `Firmy`, `Wycieczki`, `Osoby` i `Rezerwacje`.
 `Kolekcje` `Firmy`, `Wycieczki`, Osoby będą pełniły taką samą role jak w podejściu pierwszym. Natomiast kolekcja `Rezerwacje` będzie zawierać inforamcje o zapisie danej osoby na wycieczkę.
 
 Zalety:
@@ -279,17 +279,17 @@ Zalety:
 - łatwiejszy dostęp rezerwacji.
 
 Wady:
-- zapytania są bardziej skomlikowane, złożone,
+- zapytania są bardziej skomlikowane, złożone - koniecznośc agregacji w wielu przypadkach, 
 - duża liczba referencji może spowodować spadek wydajności.
 
 
-**Trzeci** składa się z dwóch kolekcji: `Osoby` i `Firmy`
+**Trzecie** składa się z dwóch kolekcji: `Osoby` i `Firmy`
 Kolekcja `Osoby` będzie zawierać dane o użytkowanikach, natomiast kolekcja `Firmy` będzie zawierać dane dotyczące firm, a także zagnieżdżone dane o oferowanych wycieczkach i osobach zapisanych na wycieczki.
 
 Zalety:
 - większość danych jest przechowywanych w jednej kolekcji,
 - mniejsza liczba kolekcji oznacza prostszą strukturę danych, co może ułatwić zarządzanie i zrozumienie bazy danych,
-- mniej operacji łączenia danych podczas przetwarzania danych.
+- mniej operacji łączenia danych podczas przetwarzania danych - możliwość pozyskania istonych danych z jednej kolekcji przy uzyciu prostego polecenia find().
 
 Wady:
 - słaba skalowaność,
@@ -610,7 +610,7 @@ db.companies.insertMany([
 
 ## c)
 
-#### Lista wycieczek na, które zapisana jest konkretna osboa:
+### Lista wycieczek na, które zapisana jest konkretna osoba:
 
 ##### Wariant 1:
 ```mongodb
@@ -758,7 +758,7 @@ db.companies.aggregate([
 ![alt text](img/lista_wycieczek_dla_osoby_w3.png)
 
 
-#### Wyświetla wycieczki, które posiadają co namjmniej jedną ocenę równą 5, wynik sortuje afabetycznie po nazwie wycieczek:
+### Wyświetla wycieczki, które posiadają co namjmniej jedną ocenę równą 5, wynik sortuje afabetycznie po nazwie wycieczek:
 
 ##### Wariant 1:
 ```mongodb
@@ -860,12 +860,70 @@ db.companies.aggregate([
 ```
 ![alt text](img/rating_5_w3.png)
 
+### Wyświetla nazwę wycieczki i liczbę rezerwacji.
+
+##### Wariant 1:
+```mongodb
+db.tours.find(
+  {}, 
+  { 
+    _id: 0, 
+    tour_name: 1, 
+    reservations_count: { $size: "$reservations" } 
+  }
+)
+```
+![alt text](img/reservations_count_w1.png)
+
+##### Wariant 2:
+```mongodb
+db.tours.aggregate([
+  {
+    $lookup: {
+      from: "reservations",
+      localField: "tour_id",
+      foreignField: "tour_id",
+      as: "reservations"
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      tour_name: 1,
+      num_reservations: { $size: "$reservations" }
+    }
+  }
+])
+```
+![alt text](img/reservations_count_w2.png)
+
+
+##### Wariant 3:
+```mongodb
+db.companies.aggregate([
+  {
+    $unwind: "$tours" 
+  },
+  {
+    $project: {
+      "_id": 0,
+      "tour_name": "$tours.tour_name",
+      "reservations_count": { $size: "$tours.reservations" }
+    }
+  }
+])
+```
+
+![alt text](img/reservations_count_w3.png)
+
+
+
 
 #### Wnioski:
 Jak widzimy na przykładzie agregacji, w wariancie 3 zapytania wydają się mniej skomplikowane i odrobinę prostsze ze względu przechowywania wiekszości danych w jedenj kolekcji.
 
 
-#### Dodanie nowej rezerwacji:
+### Dodanie nowej rezerwacji:
 
 ##### Wariant 1:
 
@@ -907,7 +965,7 @@ db.companies.updateOne(
 );
 ```
 
-#### Dodanie nowej oceny:
+### Dodanie nowej oceny:
 
 ##### Wariant 1:
 

@@ -100,7 +100,7 @@ db.tip.aggregate([
   }
 ])
 ```
-##### Ze względu na zbyt duży rozmiar pliku `trip.json`, zaimportowaliśmy tylko część dokumentów w celu przetestowania agragacji.
+Ze względu na zbyt duży rozmiar pliku `trip.json`, zaimportowaliśmy tylko część dokumentów w celu przetestowania agragacji.
 
 ![alt text](img/1_2.png)
 
@@ -124,7 +124,7 @@ db.review.aggregate([
   }
 ])
 ```
-##### Tutaj również zaimportowaliśmy tylko część dokumentów.
+Tutaj również zaimportowaliśmy tylko część dokumentów.
 
 ![alt text](img/1_3.png)
 
@@ -145,13 +145,14 @@ db.user.aggregate([
   }
 ])
 ```
-#### Tutaj również zaimportowaliśmy mniej danych
+Tutaj również zaimportowaliśmy mniej danych
+
 ![alt text](img/1_4.png)
 ### 5
 Wyznacz, jaką średnia ocenę uzyskała każda firma na podstawie wszystkich recenzji (kolekcja `review`, pole `stars`). Ogranicz do firm, które uzyskały średnią powyżej 3 gwiazdek.
 
 ### 5a
-	a) Wynik powinien zawierać id firmy oraz średnią ocenę. Posortuj wynik wg id firmy.
+a) Wynik powinien zawierać id firmy oraz średnią ocenę. Posortuj wynik wg. id firmy.
 
 
 ```js
@@ -177,7 +178,7 @@ db.review.aggregate([
 
 
 ### 5b
-	b) Wynik powinien zawierać nazwę firmy oraz średnią ocenę. Posortuj wynik wg nazwy firmy.
+b) Wynik powinien zawierać nazwę firmy oraz średnią ocenę. Posortuj wynik wg. nazwy firmy.
 ```js
 db.review.aggregate([
   {
@@ -253,8 +254,8 @@ Do sprawozdania należy kompletny zrzut wykonanych/przygotowanych baz danych (ta
 
 ## Zadanie 2  - rozwiązanie
 
-Do realizacji wybraliśmy **problem B**, firmy wycieczki, osoby.
-## a)
+Do realizacji wybraliśmy **problem B**, firmy, wycieczki, osoby.
+## a) Różne warianty struktury bazy danych
 Rozważamy trzy podejścia w budowaniu struktury bazy danych.
 
 **Pierwsze** składa się z trzech kolekcji: `Firmy`, `Wycieczki` i `Osoby`.
@@ -265,12 +266,12 @@ Zalety:
 - operacje takie jak indeksowanie, wyszukiwanie i modyfikacja danych mogą być łatwiejsze do przeprowadzenia.
 
 Wady:
-- utrudnione akutalizowanie/dodanie danych,
+- utrudniona aktualizacja/dodanie danych,
 - prowadzi do powielania danych,
 - może być trudne do skalowania, gdy baza danych rośnie wraz z liczbą firm, wycieczek i osób.
 
 **Drugie** składa się z czterech kolekcji: `Firmy`, `Wycieczki`, `Osoby` i `Rezerwacje`.
-`Kolekcje` `Firmy`, `Wycieczki`, Osoby będą pełniły taką samą role jak w podejściu pierwszym. Natomiast kolekcja `Rezerwacje` będzie zawierać inforamcje o zapisie danej osoby na wycieczkę.
+Kolekcje `Firmy`, `Wycieczki`, `Osoby` będą pełniły taką samą role jak w podejściu pierwszym. Natomiast kolekcja `Rezerwacje` będzie zawierać informacje o zapisie danej osoby na wycieczkę.
 
 Zalety:
 - minimalizacjia powielania danych,
@@ -279,12 +280,12 @@ Zalety:
 - łatwiejszy dostęp rezerwacji.
 
 Wady:
-- zapytania są bardziej skomlikowane, złożone - koniecznośc agregacji w wielu przypadkach, 
+- zapytania są bardziej skomplikowane, złożone - koniecznośc agregacji w wielu przypadkach, 
 - duża liczba referencji może spowodować spadek wydajności.
 
 
 **Trzecie** składa się z dwóch kolekcji: `Osoby` i `Firmy`
-Kolekcja `Osoby` będzie zawierać dane o użytkowanikach, natomiast kolekcja `Firmy` będzie zawierać dane dotyczące firm, a także zagnieżdżone dane o oferowanych wycieczkach i osobach zapisanych na wycieczki.
+Kolekcja `Osoby` będzie zawierać dane o użytkownikach, natomiast kolekcja `Firmy` będzie zawierać dane dotyczące firm, a także zagnieżdżone dane o oferowanych wycieczkach i osobach zapisanych na wycieczki.
 
 Zalety:
 - większość danych jest przechowywanych w jednej kolekcji,
@@ -402,7 +403,7 @@ W celu przetestowania wszystkich wariantów stworzyliśmy 3 bazy.
 ## b)
 
 Przykładowe dane dla kolekcji `Companies` i `Persons`:
-```mongodb
+```js
 db.companies.insertMany([
   { company_id: "1", company_name: "Adventure Excursions Inc." },
   { company_id: "2", company_name: "Exploration Tours Ltd." },
@@ -425,7 +426,7 @@ db.persons.insertMany([
 
 ### Wariant 1:
 
-```mongodb
+```js
 db.tours.insertMany([
   {
     "tour_id": "1",
@@ -474,7 +475,7 @@ db.tours.insertMany([
 
 ### Wariant 2:
 
-```mongodb
+```js
 db.tours.insertMany([
   {
     "tour_id": "1",
@@ -510,7 +511,7 @@ db.tours.insertMany([
 ]);
 ```
 
-```mongodb
+```js
 db.reservations.insertMany([
   {
     "reservation_id": "1",
@@ -547,7 +548,7 @@ db.reservations.insertMany([
 
 ### Wariant 3:
 
-```mongodb
+```js
 db.companies.insertMany([
   { 
     company_id: "1", 
@@ -610,10 +611,10 @@ db.companies.insertMany([
 
 ## c)
 
-### Polecenie wyświtlające listę wycieczek, na które zapisana jest konkretna osoba:
+### Polecenie wyświetlające listę wycieczek, na które zapisana jest dana osoba:
 
-##### Wariant 1:
-```mongodb
+#### Wariant 1:
+```js
 db.tours.aggregate([
   { 
     $unwind: "$reservations" 
@@ -661,9 +662,9 @@ db.tours.aggregate([
 ```
 ![alt text](img/lista_wycieczek_dla_osoby_w1.png)
 
-##### Wariant 2:
+#### Wariant 2:
 
-```mongodb
+```js
 db.reservations.aggregate([
   {
     $match: {
@@ -720,7 +721,7 @@ db.reservations.aggregate([
 ![alt text](img/lista_wycieczek_dla_osoby_w2.png)
 
 #### Wariant 3:
-```mongodb
+```js
 db.companies.aggregate([
   {
     $unwind: "$tours"
@@ -760,8 +761,8 @@ db.companies.aggregate([
 
 ### Polecenie wyświetlające wycieczki, które posiadają co namjmniej jedną ocenę równą 5, wynik sortuje afabetycznie po nazwie wycieczek:
 
-##### Wariant 1:
-```mongodb
+#### Wariant 1:
+```js
 db.tours.aggregate([
   {
     $match: {
@@ -787,8 +788,8 @@ db.tours.aggregate([
 ```
 ![alt text](img/rating_5_w1.png)
 
-##### Wariant 2:
-```mongodb
+#### Wariant 2:
+```js
 db.tours.aggregate([
   {
     $match: {
@@ -821,8 +822,8 @@ db.tours.aggregate([
 ![alt text](img/rating_5_w2.png)
 
 
-##### Wariant 3:
-```mongodb
+#### Wariant 3:
+```js
 db.companies.aggregate([
   {
     $unwind: "$tours" 
@@ -860,10 +861,10 @@ db.companies.aggregate([
 ```
 ![alt text](img/rating_5_w3.png)
 
-### Polecenie wyświeltające nazwę wycieczkek wraz z liczbą rezerwacji.
+### Polecenie wyświetlające nazwę wycieczek wraz z liczbą rezerwacji:
 
-##### Wariant 1:
-```mongodb
+#### Wariant 1:
+```js
 db.tours.find(
   {}, 
   { 
@@ -875,8 +876,8 @@ db.tours.find(
 ```
 ![alt text](img/reservations_count_w1.png)
 
-##### Wariant 2:
-```mongodb
+#### Wariant 2:
+```js
 db.tours.aggregate([
   {
     $lookup: {
@@ -898,8 +899,8 @@ db.tours.aggregate([
 ![alt text](img/reservations_count_w2.png)
 
 
-##### Wariant 3:
-```mongodb
+#### Wariant 3:
+```js
 db.companies.aggregate([
   {
     $unwind: "$tours" 
@@ -919,15 +920,15 @@ db.companies.aggregate([
 
 
 
-#### Wnioski:
-Jak widzimy na przykładzie agregacji, w wariancie 3 zapytania wydają się mniej skomplikowane i odrobinę prostsze ze względu przechowywania wiekszości danych w jedenj kolekcji.
+### Wnioski:
+Jak widzimy na przykładzie agregacji, w wariancie 3 zapytania wydają się mniej skomplikowane i odrobinę prostsze ze względu na przechowywanie większości danych w jednej kolekcji.
 
 
 ### Dodanie nowej rezerwacji:
 
-##### Wariant 1:
+#### Wariant 1:
 
-```mongodb
+```js
 db.tours.updateOne(
   { 
     "tour_id": "1"
@@ -940,8 +941,8 @@ db.tours.updateOne(
 );
 ```
 
-##### Wariant 2:
-```mongodb
+#### Wariant 2:
+```js
 db.reservations.insertOne({
   "reservation_id": "6",
   "tour_id": "1",
@@ -950,8 +951,8 @@ db.reservations.insertOne({
 });
 ```
 
-##### Wariant 3:
-```mongodb
+#### Wariant 3:
+```js
 db.companies.updateOne(
   { "company_id": "1" }, // Dopasowujemy firmę pierwszą
   {
@@ -967,9 +968,9 @@ db.companies.updateOne(
 
 ### Dodanie nowej oceny:
 
-##### Wariant 1:
+#### Wariant 1:
 
-```mongodb
+```js
 db.tours.updateOne(
   { "tour_id": "1" },
   { 
@@ -984,10 +985,9 @@ db.tours.updateOne(
 
 ```
 
+#### Wariant 2:
 
-##### Wariant 2:
-
-```mongodb
+```js
 db.tours.updateOne(
   { "tour_id": "1" },
   { 
@@ -1001,8 +1001,8 @@ db.tours.updateOne(
 )
 ```
 
-##### Wariant 3:
-```mongodb
+#### Wariant 3:
+```js
 db.companies.updateOne(
   { "company_id": "1", "tours.tour_name": "Excursion to Grand Canyon" },
   {
@@ -1013,13 +1013,13 @@ db.companies.updateOne(
 );
 ```
 
-#### Wnioski:
-Dodawanie danych w każdym z wariantów wydaje się być skomplikowane na tym samym poziomie, choć w drugim wariancie jest to bardziej intuicyjne.
+### Wnioski:
+Dodawanie danych, w każdym z wariantów wydaje się być skomplikowane na tym samym poziomie, choć w drugim wariancie jest to bardziej intuicyjne.
 
 ### Usunięcie rezerwacji na wycieczkę:
 
-##### Wariant 1:
-```mongodb
+#### Wariant 1:
+```js
 db.tours.updateOne(
   { 
     "tour_id": "1", 
@@ -1035,16 +1035,16 @@ db.tours.updateOne(
 )
 ```
 
-##### Wariant 2:
-```mongodb
+#### Wariant 2:
+```js
 db.reservations.deleteOne({
   user_id: "103",
   tour_id: "1"
 })
 ```
 
-##### Wariant 3:
-```mongodb
+#### Wariant 3:
+```js
 db.companies.updateOne(
   { 
     "company_id": "1",
@@ -1059,25 +1059,21 @@ db.companies.updateOne(
 
 ```
 
-#### Wnioski:
+### Wnioski:
 
-Dużo łatwiej jest usuwać dane z osbnych kolekcji, niż w strukturach zagnieżdżonych. W wariancie 2 wystrzczyło proste polecienie `deleteOne`, natomiast w pozostałych używaliśmy `updateOne` oraz operatora `pull`.Operacja usuwania danych z zagnieżdżonych struktur jest bardziej złożona, ponieważ wymaga odnalezienia odpowiedniego zagnieżdżonego elementu i jego aktualizacji lub usunięcia. 
+Dużo łatwiej jest usuwać dane z osobnych kolekcji, niż w strukturach zagnieżdżonych. W wariancie 2 wystarczyło proste polecienie `deleteOne`, natomiast w pozostałych musieliśmy użyć `updateOne` oraz operatora `pull`. Operacja usuwania danych z zagnieżdżonych struktur jest bardziej złożona, ponieważ wymaga odnalezienia odpowiedniego zagnieżdżonego elementu i jego aktualizacji lub usunięcia. 
 
 
 ## Wnioski ogólne:
 
-Każdy z przedstawionych przez nas wariantów ma swoje zalety i wady, a wybór między nimi zależy od wielu czynników, takich jak rodzaj danych, skala aplikacji oraz wymagania dotyczące wydajności i skalowalności. Zauważamy, że operacje dodawania, usuwania czy aktualizacji danych w strukturach zagnieżdżonych są bardziej skomplikowane niż klasyczne operacje na podstawowych typach danych. Natomiast pozyskiwanie danych w takich rozwiązaniach jest prostsze ze względu na fakt posiadania wielu danych w jednej kolekcji. W rozwiązaniu opierającym się na tworzeniu wielu kolekcji, tworzenie zapytań w celu uzyskania danych może być bardziej skomplikowane i wymagać użycia agregacji.
+Każdy z przedstawionych przez nas wariantów ma swoje zalety oraz wady, a wybór pomiędzy nimi zależy od wielu czynników, takich jak rodzaj danych, skala aplikacji oraz wymagania dotyczące wydajności i skalowalności. Zauważamy, że operacje dodawania, usuwania czy aktualizacji danych w strukturach zagnieżdżonych są bardziej skomplikowane niż klasyczne operacje na podstawowych typach danych. Natomiast pozyskiwanie danych w takich rozwiązaniach jest prostsze ze względu na fakt posiadania wielu danych w jednej kolekcji. W rozwiązaniu opierającym się na tworzeniu wielu kolekcji, tworzenie zapytań w celu uzyskania danych może być bardziej skomplikowane i wymagać użycia agregacji.
 
 ---
 
 Punktacja:
-
 |         |     |
 | ------- | --- |
 | zadanie | pkt |
 | 1       | 0,6 |
 | 2       | 1,4 |
 | razem   | 2   |
-
-
-

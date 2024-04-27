@@ -397,7 +397,7 @@ Wady:
 ```
 
 
-W celu przetestowania obu wariantów stworzyliśmy 3 bazy.
+W celu przetestowania wszystkich wariantów stworzyliśmy 3 bazy.
 
 ## b)
 
@@ -610,7 +610,7 @@ db.companies.insertMany([
 
 ## c)
 
-### Lista wycieczek na, które zapisana jest konkretna osoba:
+### Polecenie wyświtlające listę wycieczek, na które zapisana jest konkretna osoba:
 
 ##### Wariant 1:
 ```mongodb
@@ -758,7 +758,7 @@ db.companies.aggregate([
 ![alt text](img/lista_wycieczek_dla_osoby_w3.png)
 
 
-### Wyświetla wycieczki, które posiadają co namjmniej jedną ocenę równą 5, wynik sortuje afabetycznie po nazwie wycieczek:
+### Polecenie wyświetlające wycieczki, które posiadają co namjmniej jedną ocenę równą 5, wynik sortuje afabetycznie po nazwie wycieczek:
 
 ##### Wariant 1:
 ```mongodb
@@ -860,7 +860,7 @@ db.companies.aggregate([
 ```
 ![alt text](img/rating_5_w3.png)
 
-### Wyświetla nazwę wycieczki i liczbę rezerwacji.
+### Polecenie wyświeltające nazwę wycieczkek wraz z liczbą rezerwacji.
 
 ##### Wariant 1:
 ```mongodb
@@ -1013,12 +1013,60 @@ db.companies.updateOne(
 );
 ```
 
-### Wnioski:
+#### Wnioski:
 Dodawanie danych w każdym z wariantów wydaje się być skomplikowane na tym samym poziomie, choć w drugim wariancie jest to bardziej intuicyjne.
+
+### Usunięcie rezerwacji na wycieczkę:
+
+##### Wariant 1:
+```mongodb
+db.tours.updateOne(
+  { 
+    "tour_id": "1", 
+    "reservations.user_id": "103" 
+  },
+  {
+    $pull: { 
+      "reservations": {
+        "user_id": "103"
+      }
+    }
+  }
+)
+```
+
+##### Wariant 2:
+```mongodb
+db.reservations.deleteOne({
+  user_id: "103",
+  tour_id: "1"
+})
+```
+
+##### Wariant 3:
+```mongodb
+db.companies.updateOne(
+  { 
+    "company_id": "1",
+    "tours.tour_name": "Excursion to Grand Canyon",
+  },
+  { 
+    $pull: { 
+      "tours.$.reservations": { "user_id": "103" } 
+    } 
+  }
+);
+
+```
+
+#### Wnioski:
+
+Dużo łatwiej jest usuwać dane z osbnych kolekcji, niż w strukturach zagnieżdżonych. W wariancie 2 wystrzczyło proste polecienie `deleteOne`, natomiast w pozostałych używaliśmy `updateOne` oraz operatora `pull`.Operacja usuwania danych z zagnieżdżonych struktur jest bardziej złożona, ponieważ wymaga odnalezienia odpowiedniego zagnieżdżonego elementu i jego aktualizacji lub usunięcia. 
+
 
 ## Wnioski ogólne:
 
-Każdy z przedstaionych przez nas wariantów ma swoje zalety i wady, a wybór między nimi zależy od wielu czynników, takich jak rodzaj danych, skala aplikacji, wymagania dotyczące wydajności i skalowalności. 
+Każdy z przedstawionych przez nas wariantów ma swoje zalety i wady, a wybór między nimi zależy od wielu czynników, takich jak rodzaj danych, skala aplikacji oraz wymagania dotyczące wydajności i skalowalności. Zauważamy, że operacje dodawania, usuwania czy aktualizacji danych w strukturach zagnieżdżonych są bardziej skomplikowane niż klasyczne operacje na podstawowych typach danych. Natomiast pozyskiwanie danych w takich rozwiązaniach jest prostsze ze względu na fakt posiadania wielu danych w jednej kolekcji. W rozwiązaniu opierającym się na tworzeniu wielu kolekcji, tworzenie zapytań w celu uzyskania danych może być bardziej skomplikowane i wymagać użycia agregacji.
 
 ---
 

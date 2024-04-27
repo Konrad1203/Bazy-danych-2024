@@ -759,7 +759,7 @@ db.companies.aggregate([
 ![alt text](img/lista_wycieczek_dla_osoby_w3.png)
 
 
-### Polecenie wyświetlające wycieczki, które posiadają co namjmniej jedną ocenę równą 5, wynik sortuje afabetycznie po nazwie wycieczek:
+### Polecenie wyświetlające wycieczki, które posiadają co najmniej jedną ocenę równą 5. Wynik sortuje alfabetycznie po nazwie wycieczek:
 
 #### Wariant 1:
 ```js

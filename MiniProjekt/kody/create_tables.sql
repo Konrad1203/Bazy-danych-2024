@@ -2,7 +2,7 @@ CREATE TABLE Clients (
     client_id integer  NOT NULL,
     firstname varchar2(20)  NOT NULL,
     lastname varchar2(20)  NOT NULL,
-    address_id integer  NOT NULL,
+    address varchar2(50)  NOT NULL,
     phone varchar2(15)  NOT NULL,
     CONSTRAINT Clients_pk PRIMARY KEY (client_id)
 );
@@ -41,12 +41,13 @@ CREATE TABLE Categories (
 
 CREATE TABLE Movies (
     movie_id int  NOT NULL,
+    title varchar2(50) NOT NULL,
     category_id int  NOT NULL,
     release_date date  NOT NULL,
-    duration timestamp  NOT NULL,
-    rating int  NULL,
-    description varchar2(100)  NULL,
-    budget int  NULL,
+    duration int  NOT NULL,
+    rating number(3, 1)  NULL,
+    description varchar2(250)  NULL,
+    production_country varchar2(30)  NULL,
     director varchar2(40)  NULL,
     CONSTRAINT Movies_pk PRIMARY KEY (movie_id)
 );
@@ -61,6 +62,6 @@ CREATE TABLE Actors (
 CREATE TABLE Actors_in_movie (
     movie_id int  NOT NULL,
     actor_id int  NOT NULL,
-    role varchar2(20)  NOT NULL,
+    role varchar2(30)  NOT NULL,
     CONSTRAINT Actors_in_movie_pk PRIMARY KEY (actor_id, movie_id)
 );

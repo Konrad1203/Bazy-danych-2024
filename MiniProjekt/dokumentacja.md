@@ -35,6 +35,7 @@
 - client_id - id klienta (to samo co login_id)
 - firstname - imię
 - lastname - nazwisko
+- address - adres
 - phone - numer telefonu
 
 #### Reservation (tabela z rezerwacjami filmów)
@@ -63,12 +64,13 @@
   
 #### Movies (tabela zawierające informacje o filmach)
 - movie_id - id filmu
+- title - tytuł filmu
 - category_id - id głównej kategorii filmu
 - release_date - data globalna wydania filmu
 - duration - czas trwania filmu
-- rating - ocena filmu w skali 1 do 100
+- rating - ocena filmu w skali 1 do 10
 - description - krótki opis filmu
-- budget - budżet filmu
+- production_country - kraj produkcji
 - director - imię i nazwisko reżysera
 
 #### Actors (lista aktorów)

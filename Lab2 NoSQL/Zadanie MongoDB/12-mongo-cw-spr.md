@@ -41,6 +41,8 @@ W niektórych przypadkach może być potrzebne wykorzystanie mechanizmu Aggregat
 
 	b) Wynik powinien zawierać nazwę firmy oraz średnią ocenę. Posortuj wynik wg nazwy firmy.
 
+<div style="page-break-after: always"></div>
+
 ## Zadanie 1  - rozwiązanie
 
 ### 1. 
@@ -148,7 +150,10 @@ db.user.aggregate([
 Tutaj również zaimportowaliśmy mniej danych
 
 ![alt text](img/1_4.png)
-### 5
+
+<div style="page-break-after: always"></div>
+
+### 5.
 Wyznacz, jaką średnia ocenę uzyskała każda firma na podstawie wszystkich recenzji (kolekcja `review`, pole `stars`). Ogranicz do firm, które uzyskały średnią powyżej 3 gwiazdek.
 
 ### 5a
@@ -176,6 +181,7 @@ db.review.aggregate([
 
 ![alt text](img/1_5a.png)
 
+<div style="page-break-after: always"></div>
 
 ### 5b
 b) Wynik powinien zawierać nazwę firmy oraz średnią ocenę. Posortuj wynik wg. nazwy firmy.
@@ -299,13 +305,14 @@ Wady:
 
 ### Struktura kolekcji:
 
-##### Companies:
+#### Companies:
 ```json
 {
   "company_id": "indetyfikator",
   "company_name": "Nazwa firmy"
 }
 ```
+<div style="page-break-after: always"></div>
 
 #### Persons:
 ```json
@@ -423,6 +430,7 @@ db.persons.insertMany([
   { user_id: "110", name: "Linda Garcia" }
 ]);
 ```
+<div style="page-break-after: always"></div>
 
 ### Wariant 1:
 
@@ -546,6 +554,8 @@ db.reservations.insertMany([
 ]);
 ```
 
+<div style="page-break-after: always"></div>
+
 ### Wariant 3:
 
 ```js
@@ -608,6 +618,7 @@ db.companies.insertMany([
   }
 ]);
 ```
+<div style="page-break-after: always"></div>
 
 ## c)
 
@@ -661,6 +672,8 @@ db.tours.aggregate([
 ])
 ```
 ![alt text](img/lista_wycieczek_dla_osoby_w1.png)
+
+<div style="page-break-after: always"></div>
 
 #### Wariant 2:
 
@@ -758,6 +771,7 @@ db.companies.aggregate([
 
 ![alt text](img/lista_wycieczek_dla_osoby_w3.png)
 
+<div style="page-break-after: always"></div>
 
 ### Polecenie wyświetlające wycieczki, które posiadają co najmniej jedną ocenę równą 5. Wynik sortuje alfabetycznie po nazwie wycieczek:
 
@@ -918,7 +932,7 @@ db.companies.aggregate([
 ![alt text](img/reservations_count_w3.png)
 
 
-
+<div style="page-break-after: always"></div>
 
 ### Wnioski:
 Jak widzimy na przykładzie agregacji, w wariancie 3 zapytania wydają się mniej skomplikowane i odrobinę prostsze ze względu na przechowywanie większości danych w jednej kolekcji.

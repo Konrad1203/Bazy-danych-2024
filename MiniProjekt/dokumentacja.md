@@ -59,6 +59,9 @@ CREATE TABLE Clients (
 - reservation_date - data rezerwacji 
 - reservation_expiry_date - data wygaśnięcia rezerwacji
 - status - akutalny status rezerwacji
+    - `N` - nowa rezerwacja
+    - `C` - rezerwacja anulowana
+    - `R` - rezerwacaj zrealizowana
 
 ```sql
 CREATE TABLE Reservation (
@@ -110,13 +113,13 @@ ALTER TABLE Rental ADD CONSTRAINT Rental_Clients
 #### Copy (lista fizycznych kopii danego filmu)
 - copy_id - id danej kopii
 - movie_id - id jej filmu
-- on_loan - czy wypożyczona ("Y", jeśli wypożyczona, "N" jeśli nie)
+- is_available - czy wypożyczona lub zarezerwowana ("Y", jeśli jest dostępna, "N" jeśli nie)
 
 ```sql
 CREATE TABLE Copy (
     copy_id integer  NOT NULL,
     movie_id integer  NOT NULL,
-    on_loan char(1)  NOT NULL,
+    is_available char(1)  NOT NULL,
     CONSTRAINT Copy_pk PRIMARY KEY (copy_id)
 );
 ALTER TABLE Copy ADD CONSTRAINT Copy_Movies
@@ -233,11 +236,11 @@ SELECT c.copy_id,
        cat.name AS category_name,
        m.release_date,
        m.duration,
-       c.on_loan
+       c.is_available
 FROM Copy c
 JOIN Movies m ON c.movie_id = m.movie_id
 JOIN Categories cat ON m.category_id = cat.category_id
-WHERE c.on_loan = 'N';
+WHERE c.is_available = 'Y';
 ```
 ```sql
 select * from vw_available_copies;
@@ -318,7 +321,8 @@ SELECT * FROM ActorRentals;
 
 ---
 
-### Możliwe widoki do zrealizowania:
+### Możliwe widoki do zrealizowania: 
+<!-- jak bedzie czas to może zrobimy  -->
 
 1. Widok Aktywnych Wypożyczeń: Ten widok mógłby wyświetlać aktualne wypożyczenia, obejmujące informacje o klientach, filmach, kopii filmów, datach wypożyczenia i zwrotu itp.
 2. Widok Klientów z Opóźnieniami Zwrotu: Ten widok mógłby identyfikować klientów, którzy mają opóźnione zwroty i wyświetlać informacje o klientach, filmach, które wypożyczyli, datach wypożyczenia i zwrotu oraz czasie opóźnienia.
@@ -358,35 +362,43 @@ select f_get_client_reservations(1) from dual;
 
 ---
 
-#### f_is_copy_reserved_or_rented
+#### f_is_copy_available
 
-Funkcja `f_is_copy_reserved_or_rented` umożliwia sprawdzenie statusu konkretnej kopii filmu na podstawie jej identyfikatora. Zwraca informacje o tym, czy kopia jest aktualnie zarezerwowana, wypożyczona, dostępna, lub czy nie istnieje w bazie danych. Jest to przydatne narzędzie do zarządzania dostępnością kopii filmów w systemie wypożyczalni.
+Funkcja `f_is_copy_available` umożliwia sprawdzenie statusu konkretnej kopii filmu na podstawie jej identyfikatora. Zwraca informacje o tym, czy kopia jest aktualnie zarezerwowana, wypożyczona, dostępna, lub czy nie istnieje w bazie danych. Jest to przydatne narzędzie do zarządzania dostępnością kopii filmów w systemie wypożyczalni.
 
 ```sql
-CREATE OR REPLACE FUNCTION f_is_copy_reserved_or_rented(copy_id_input INT) 
-RETURN VARCHAR2
+CREATE OR REPLACE FUNCTION f_is_copy_available(copy_id_input INT)
+RETURN BOOLEAN
 IS
-    status VARCHAR2(10);
+    is_copy_anvailable CHAR(1);
 BEGIN
-    SELECT 
-        CASE
-            WHEN EXISTS (SELECT 1 FROM Reservation WHERE copy_id = copy_id_input AND status = 'A') THEN 'Reserved'
-            WHEN EXISTS (SELECT 1 FROM Rental WHERE copy_id = copy_id_input) THEN 'Rented'
-            ELSE 'Available'
-        END
-    INTO status
-    FROM dual;
+    -- Sprawdzenie, czy kopia jest dostępna w tabeli Copy
+    SELECT IS_AVAILABLE
+    INTO is_copy_anvailable
+    FROM Copy
+    WHERE copy_id = copy_id_input;
 
-    RETURN status;
+    IF is_copy_anvailable = 'Y' THEN
+        RETURN TRUE;
+    ELSE
+        RETURN FALSE;
+    END IF;
+
 EXCEPTION
     WHEN NO_DATA_FOUND THEN
-        RETURN 'Copy not found';
+        RETURN FALSE;
 END;
 ```
 ```sql
-select f_is_copy_reserved_or_rented(1) from dual;
+BEGIN
+    IF f_is_copy_available(1) THEN
+        DBMS_OUTPUT.PUT_LINE('Copy is available.');
+    ELSE
+        raise_application_error(-20001, 'Copy is not available.');
+    END IF;
+END;
 ```
-![f_is_copy_reserved_or_rented](imgs/functions/f_is_copy_reserved_or_rented.png)
+![f_is_copy_available](imgs/functions/f_is_copy_available.png)
 
 
 ---
@@ -427,10 +439,403 @@ select f_get_movies_by_category(2) from dual;
 
 ---
 
+#### f_check_client_exist
+Funkcja sprawdzająca czy dany client_id istnieje
+```sql
+CREATE OR REPLACE FUNCTION f_check_client_exist(client_id_input INT) 
+RETURN BOOLEAN
+IS
+    client_count INT;
+BEGIN
+    -- Sprawdzenie, czy istnieje osoba o podanym ID w tabeli Clients
+    SELECT COUNT(*)
+    INTO client_count
+    FROM Clients
+    WHERE client_id = client_id_input;
+
+    -- Jeśli liczba znalezionych rekordów jest większa od zera, to osoba istnieje
+    IF client_count > 0 THEN
+        RETURN TRUE;
+    ELSE
+        RETURN FALSE;
+    END IF;
+END;
+```
+```sql
+BEGIN
+    IF f_check_client_exist(-1) THEN
+        DBMS_OUTPUT.PUT_LINE('Client exists.');
+    ELSE
+        raise_application_error(-20001, 'Client does not exist.');
+    END IF;
+END;
+```
+![f_check_client_exist](imgs/functions/f_check_client_exist.png)
+
+---
+
+#### f_check_copy_exist
+
+Funkcja sprawdza czy podany copy_id istnieje:
+```sql
+CREATE OR REPLACE FUNCTION f_check_copy_exist(copy_id_input INT) 
+RETURN BOOLEAN
+IS
+    copy_count INT;
+BEGIN
+    SELECT COUNT(*)
+    INTO copy_count
+    FROM Copy
+    WHERE copy_id = copy_id_input;
+
+    -- Jeśli liczba znalezionych rekordów jest większa od zera, to kopia istnieje
+    IF copy_count > 0 THEN
+        RETURN TRUE;
+    ELSE
+        RETURN FALSE;
+    END IF;
+END;
+```
+```sql
+BEGIN
+    IF f_check_copy_exist(-1) THEN
+        DBMS_OUTPUT.PUT_LINE('Copy exists.');
+    ELSE
+        raise_application_error(-20001, 'Copy does not exist.');
+    END IF;
+END;
+```
+![f_check_copy_exist](imgs/functions/f_check_copy_exist.png)
+
+---
+
 ### Procedury
 
-CRUD dla Reservation, Rental, Copy, Movie
+#### p_add_reservation
+
+Procedura odpowiedzialna za dodanie nowej rezerwacji do tabeli Reservations
+
+```sql
+CREATE OR REPLACE PROCEDURE p_add_reservation(
+    client_id_input INT,
+    copy_id_input INT,
+    rental_duration_input INT
+)
+IS
+    reservation_date_input DATE := SYSDATE;
+    reservation_expiry_date_input DATE;
+BEGIN
+    -- Sprawdzenie, czy podana długość wypożyczenia jest większa niż 0
+    IF rental_duration_input <= 0 THEN
+        raise_application_error(-20001, 'Rental duration must be greater than 0.');
+    END IF;
+
+    -- Obliczenie daty wygaśnięcia rezerwacji poprzez dodanie liczby dni do daty rezerwacji
+    reservation_expiry_date_input := reservation_date_input + rental_duration_input;
+    
+    -- Wstawianie nowej rezerwacji do tabeli Reservation
+    INSERT INTO Reservation (client_id, copy_id, reservation_date, reservation_expiry_date, status)
+    VALUES (client_id_input, copy_id_input, reservation_date_input, reservation_expiry_date_input, 'N');
+
+    
+    DBMS_OUTPUT.PUT_LINE('Reservation added successfully.');
+EXCEPTION
+    WHEN OTHERS THEN
+        raise_application_error(-20002, 'Error adding reservation: ' || SQLERRM);
+END;
+```
+
+Użycie:
+```sql
+BEGIN
+    P_ADD_RESERVATION(1, 1, 10);
+END;
+```
+![p_add_reservation](imgs/procedures/p_add_reservation.png)
+
+---
+
+#### p_change_reservation_status
+
+Procedura odpowiedzialna za zmianę statusu rezerwacji
+
+```sql
+CREATE OR REPLACE PROCEDURE p_change_reservation_status(
+    reservation_id_input INT,
+    new_status_input CHAR
+)
+IS
+    reservation_exists INT;
+BEGIN
+    -- Sprawdzenie, czy podane reservation_id istnieje
+    SELECT COUNT(*)
+    INTO reservation_exists
+    FROM Reservation
+    WHERE reservation_id = reservation_id_input;
+
+    IF reservation_exists = 0 THEN
+        raise_application_error(-20001, 'Reservation with the given ID does not exist.');
+    END IF;
+
+    -- Aktualizacja statusu rezerwacji
+    UPDATE Reservation
+    SET status = new_status_input
+    WHERE reservation_id = reservation_id_input;
+
+    -- Aktualizacja stanu dostępności kopii w tabeli Copy
+    IF new_status_input = 'C' THEN
+        UPDATE Copy
+        SET is_available = 'Y'
+        WHERE copy_id IN (SELECT copy_id FROM Reservation WHERE reservation_id = reservation_id_input);
+    ELSE
+        UPDATE Copy
+        SET is_available = 'N'
+        WHERE copy_id IN (SELECT copy_id FROM Reservation WHERE reservation_id = reservation_id_input);
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE('Reservation status updated successfully.');
+EXCEPTION
+    WHEN OTHERS THEN
+        raise_application_error(-20003, 'Error updating reservation status: ' || SQLERRM);
+END;
+```
+
+#### p_add_new_rental
+
+Procedura jest odpowiedzialna za dodawanie nowego wypożyczenia. 
+    
+```sql
+CREATE OR REPLACE PROCEDURE p_add_new_rental(
+    client_id_input INT,
+    copy_id_input INT,
+    rental_duration_input INT
+)
+IS
+    reservation_date_input DATE := SYSDATE;
+    reservation_expiry_date_input DATE;
+BEGIN
+
+    -- Sprawdzenie, czy podana długość wypożyczenia jest większa niż 0
+    IF rental_duration_input <= 0 THEN
+        raise_application_error(-20001, 'Rental duration must be greater than 0.');
+    END IF;
+
+    -- Obliczenie daty wygaśnięcia rezerwacji poprzez dodanie liczby dni do daty rezerwacji
+    reservation_expiry_date_input := reservation_date_input + rental_duration_input;
+
+    -- Wstawienie nowego wypożyczenia do tabeli Rental
+    INSERT INTO Rental (client_id, copy_id, out_date, due_date)
+    VALUES (client_id_input, copy_id_input, reservation_date_input, reservation_expiry_date_input);
+
+
+    DBMS_OUTPUT.PUT_LINE('New rental added successfully.');
+EXCEPTION
+    WHEN OTHERS THEN
+        raise_application_error(-20001, 'Error adding new rental: ' || SQLERRM);
+END;
+```
+
+#### p_remove_rental
+
+Procedura opowiedzialna za usuwanie kopii z tabeli wypożyczeń - `Rental`. Odpowiada fizycznemu zwrotowi filmu do wypożyczalni.
+
+```sql
+CREATE OR REPLACE PROCEDURE p_remove_rental(
+    rental_id_input INT
+)
+IS
+BEGIN
+    DELETE FROM Rental WHERE rental_id = rental_id_input;
+
+    DBMS_OUTPUT.PUT_LINE('Rental removed successfully.');
+EXCEPTION
+    WHEN OTHERS THEN
+        raise_application_error(-20001, 'Error removing rental: ' || SQLERRM);
+END;
+```
+
+#### p_add_rental_after_reservation
+
+Procedura odpowiada fizycznemu odebraniu filmu z wypożyczalni po wcześniejszej rezerwacji.
+
+```sql
+CREATE OR REPLACE PROCEDURE p_add_rental_after_reservation(
+    client_id_input INT,
+    copy_id_input INT,
+    rental_duration_input INT,
+    reservation_id_input INT
+)
+IS
+BEGIN
+    -- Aktualizacja statusu rezerwacji
+    p_change_reservation_status(reservation_id_input, 'R');
+
+    -- Dodanie nowego wypożyczenia
+    p_add_new_rental(client_id_input, copy_id_input, rental_duration_input);
+
+    -- Zatwierdzenie zmian
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Wycofanie transakcji w przypadku błędu
+        ROLLBACK;
+END;
+```
+
+#### p_add_rental_without_reservation
+
+Analogicznie jak poprzednia procedura tylko bez wcześniejszej rezerwacji.
+
+```sql
+CREATE OR REPLACE PROCEDURE p_add_rental_without_reservation(
+    client_id_input INT,
+    copy_id_input INT,
+    rental_duration_input INT
+)
+IS
+BEGIN
+    -- Dodanie nowego wypożyczenia
+    p_add_new_rental(client_id_input, copy_id_input, rental_duration_input);
+
+    -- Zatwierdzenie zmian
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Wycofanie transakcji w przypadku błędu
+        ROLLBACK;
+END;
+```
 
 ### Triggery
 
+#### t_copy_check_available
 
+```sql
+CREATE OR REPLACE TRIGGER t_copy_check_available
+BEFORE INSERT OR UPDATE OF is_available ON Copy
+FOR EACH ROW
+BEGIN
+    IF :NEW.is_available NOT IN ('Y', 'N') THEN
+        raise_application_error(-20001, 'Invalid value for is_available column. Value must be "Y" or "N".');
+    END IF;
+END;
+```
+
+
+#### t_reservation_add
+```sql
+CREATE OR REPLACE TRIGGER t_reservation_add
+BEFORE INSERT ON reservation
+FOR EACH ROW
+DECLARE
+    copy_available BOOLEAN;
+BEGIN
+    IF NOT f_check_client_exist(:NEW.client_id) THEN
+        raise_application_error(-20001, 'Client with the given ID does not exist.');
+    END IF;
+
+    IF NOT f_check_copy_exist(:NEW.copy_id) THEN
+        raise_application_error(-20002, 'Copy with the given ID does not exist.');
+    END IF;
+
+    -- Wywołanie funkcji F_IS_COPY_AVAILABLE i przypisanie wyniku do zmiennej copy_available
+    copy_available := f_is_copy_available(:NEW.copy_id);
+
+    -- Sprawdzenie, czy kopia jest już zarezerwowana lub wypożyczona
+    IF NOT copy_available THEN
+        raise_application_error(-20003, 'Copy is already reserved or rented.');
+    END IF;
+
+    -- Sprawdzenie, czy status rezerwacji jest poprawny
+    IF :NEW.status <> 'N' THEN
+        raise_application_error(-20004, 'Invalid reservation status. Status must be "N".');
+    END IF;
+
+    -- Aktualizacja pola is_available na wartość 'N' w tabeli Copy
+    UPDATE copy SET is_available = 'N' WHERE copy_id = :NEW.copy_id;
+END;
+```
+Test trigera - najpierw osoba o id 1 rezerwuje fild o copy_id 1, a następnei osoba o id 2 próbuje zarezerwować ten sam film:
+Pierwsze wywołanie - wszystko działa:
+```sql
+BEGIN
+    P_ADD_RESERVATION(1, 1, 10);
+END;
+```
+Drugie - pojawia się bład:
+```sql
+BEGIN
+    P_ADD_RESERVATION(2, 1, 10);
+END;
+```
+![t_reservation_add](imgs/triggers/t_reservation_add.png)
+---
+
+#### t_reservation_update
+
+```sql
+    CREATE OR REPLACE TRIGGER t_reservation_update
+BEFORE UPDATE ON Reservation
+FOR EACH ROW
+DECLARE
+    new_status_input CHAR(1);
+BEGIN
+    -- Przypisanie nowego statusu do zmiennej
+    new_status_input := :NEW.status;
+
+    -- Sprawdzenie, czy nowy status jest prawidłowy
+    IF new_status_input NOT IN ('N', 'C', 'R') THEN
+        raise_application_error(-20001, 'Invalid status. Status must be "N", "C", or "R".');
+    END IF;
+
+    -- Aktualizacja stanu dostępności kopii w tabeli Copy
+    IF new_status_input = 'C' THEN
+        UPDATE Copy
+        SET is_available = 'Y'
+        WHERE copy_id = :NEW.copy_id;
+    ELSE
+        UPDATE Copy
+        SET is_available = 'N'
+        WHERE copy_id = :NEW.copy_id;
+    END IF;
+END;
+```
+
+#### t_rental_add
+
+```sql
+CREATE OR REPLACE TRIGGER t_rental_add
+BEFORE INSERT ON Rental
+FOR EACH ROW
+BEGIN
+    -- Aktualizacja stanu dostępności kopii w tabeli Copy
+    UPDATE Copy
+    SET is_available = 'N'
+    WHERE copy_id = :NEW.copy_id;
+
+    DBMS_OUTPUT.PUT_LINE('Rental added successfully.');
+EXCEPTION
+    WHEN OTHERS THEN
+        raise_application_error(-20001, 'Error updating rental: ' || SQLERRM);
+END;
+```
+
+
+#### t_rental_removal
+
+```sql
+CREATE OR REPLACE TRIGGER t_rental_removal
+AFTER DELETE ON Rental
+FOR EACH ROW
+BEGIN
+    -- Aktualizacja stanu dostępności kopii w tabeli Copy
+    UPDATE Copy
+    SET is_available = 'Y'
+    WHERE copy_id = :OLD.copy_id;
+
+    DBMS_OUTPUT.PUT_LINE('Rental removed successfully.');
+EXCEPTION
+    WHEN OTHERS THEN
+        raise_application_error(-20001, 'Error removing rental: ' || SQLERRM);
+END;
+```

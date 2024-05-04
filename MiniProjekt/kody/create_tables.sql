@@ -29,7 +29,7 @@ CREATE TABLE Rental (
 CREATE TABLE Copy (
     copy_id integer  NOT NULL,
     movie_id integer  NOT NULL,
-    on_loan char(1)  NOT NULL,
+    is_available char(1)  NOT NULL,
     CONSTRAINT Copy_pk PRIMARY KEY (copy_id)
 );
 

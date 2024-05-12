@@ -2,7 +2,7 @@ from flask import Flask, jsonify, render_template
 import cx_Oracle
 
 app = Flask(__name__)
-app.config['JSON_AS_ASCII'] = False
+
 
 with open('MiniProjekt/backend/config.txt', 'r') as file:
     lines = file.readlines()
@@ -18,10 +18,6 @@ password = config_data['password']
 dsn = cx_Oracle.makedsn("dbmanage.lab.ii.agh.edu.pl", 1521, sid="DBMANAGE")
 
 cx_Oracle.init_oracle_client(lib_dir="C:\instantclient_21_13")
-
-# dsn = cx_Oracle.makedsn("dbmanage.lab.ii.agh.edu.pl", 1521, sid="DBMANAGE")
-# conn = cx_Oracle.connect(user=user, password=password, dsn=dsn)
-
 
 
 
@@ -54,6 +50,16 @@ def index():
             table += '<tr><td>{}</td><td>{}</td><td>{}</td></tr>'.format(row[0], row[1], row[2])
         table += '</table>'
         return table
+    
+@app.route('/VW_MOVIE_POPULARITY')
+def VW_MOVIE_POPULARITY():
+    result = execute_query("select * from VW_MOVIE_POPULARITY")
+    if 'error' in result:
+        return render_template('error.html', message='Wystąpił błąd: ' + result['error']), 500
+    else:
+        return result
+    
 
 if __name__ == '__main__':
     app.run(debug=True, host='127.0.0.1', port=5000)
+

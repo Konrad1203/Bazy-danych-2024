@@ -230,13 +230,14 @@ ALTER TABLE Actors_in_movie ADD CONSTRAINT Actors_in_movie_Movies
 Widok dostępnych kopii filmów wyświetla listę dostępnych kopii filmów wraz z ich szczegółami, takimi jak tytuł filmu, kategoria, data wydania, dostępność itp.
 
 ```sql
-CREATE VIEW vw_available_copies  AS
-SELECT c.copy_id,
-       m.title AS movie_title,
-       cat.name AS category_name,
-       m.release_date,
-       m.duration,
-       c.is_available
+CREATE OR REPLACE VIEW vw_available_copies AS
+SELECT
+    c.copy_id,
+    m.title AS movie_title,
+    cat.name AS category_name,
+    m.release_date,
+    m.duration,
+    c.is_available
 FROM Copy c
 JOIN Movies m ON c.movie_id = m.movie_id
 JOIN Categories cat ON m.category_id = cat.category_id
@@ -267,7 +268,7 @@ FROM Reservation r
 JOIN Clients c ON r.client_id = c.client_id
 JOIN Copy co ON r.copy_id = co.copy_id
 JOIN Movies m ON co.movie_id = m.movie_id
-WHERE r.status = 'A';
+WHERE r.status = 'R';
 ```
 ```sql
 select * from vw_current_reservations;
@@ -321,12 +322,40 @@ SELECT * FROM ActorRentals;
 
 ---
 
+#### vw_most_popular_actors_per_category
+
+Widok przedstawia najpopularniejszego aktora występującego w filach danej kategorii. 
+
+```sql
+CREATE OR REPLACE VIEW vw_most_popular_actors_per_category AS
+SELECT category_name,
+       actor_name,
+       movie_count
+FROM (
+    SELECT c.name AS category_name,
+           a.firstname || ' ' || a.lastname AS actor_name,
+           COUNT(*) AS movie_count,
+           ROW_NUMBER() OVER (PARTITION BY c.category_id ORDER BY COUNT(*) DESC) AS actor_rank
+    FROM Categories c
+    JOIN Movies m ON c.category_id = m.category_id
+    JOIN Actors_in_movie aim ON m.movie_id = aim.movie_id
+    JOIN Actors a ON aim.actor_id = a.actor_id
+    GROUP BY c.category_id, c.name, a.firstname, a.lastname
+)
+WHERE actor_rank = 1;
+```
+```sql
+SELECT * FROM vw_most_popular_actors_per_category;
+```
+![vw_actor_rentals](imgs/views/vw_most_popular_actors_per_category.png)
+
+---
+
 ### Możliwe widoki do zrealizowania: 
 <!-- jak bedzie czas to może zrobimy  -->
 
 1. Widok Aktywnych Wypożyczeń: Ten widok mógłby wyświetlać aktualne wypożyczenia, obejmujące informacje o klientach, filmach, kopii filmów, datach wypożyczenia i zwrotu itp.
 2. Widok Klientów z Opóźnieniami Zwrotu: Ten widok mógłby identyfikować klientów, którzy mają opóźnione zwroty i wyświetlać informacje o klientach, filmach, które wypożyczyli, datach wypożyczenia i zwrotu oraz czasie opóźnienia.
-3. Widok Dochodów z Wypożyczeń: Ten widok mógłby obliczać całkowite dochody z wypożyczeń, grupując wypożyczenia według miesiąca lub roku i sumując opłaty za wypożyczenia.
 
 
 ### Funkcje
@@ -838,4 +867,86 @@ EXCEPTION
     WHEN OTHERS THEN
         raise_application_error(-20001, 'Error removing rental: ' || SQLERRM);
 END;
+```
+
+
+### Backend
+
+Aplikacja została zrealizowana w `Pythonie`, przy użyciu frameworka `Flask`.
+
+#### Połączenie z bazą danych
+
+W pliku `base.py` łączymy sie z bazą danych przy pomocy modułu `cx_Oracle`, który umożliwia interakcję z bazą danych `Oracle` za pomocą języka `Python`. 
+
+```python
+import cx_Oracle
+
+global conn
+
+def connect_to_data_base():
+    global conn
+    try:
+        with open('MiniProjekt/backend/config.txt', 'r') as file:
+            lines = file.readlines()
+
+        config_data = {}
+
+        for line in lines:
+            key, value = line.strip().split(' = ')
+            config_data[key] = value
+
+        lib_dir = "C:\instantclient_21_13"
+        user = config_data['user']
+        password = config_data['password']
+        dsn = cx_Oracle.makedsn("dbmanage.lab.ii.agh.edu.pl", 1521, sid="DBMANAGE")
+
+        cx_Oracle.init_oracle_client(lib_dir=lib_dir)
+        conn = cx_Oracle.connect(user=user, password=password, dsn=dsn, encoding="UTF-8")
+
+        return conn
+
+    except cx_Oracle.Error as error:
+        print("Błąd podczas łączenia z bazą danych:", error)
+        return None
+```
+
+### Wykonywanie poleceń:
+
+Funkcja odpowiedzialna za wykonywanie poleceń w bazie danych.
+
+```python
+def execute_querry(sql):
+    global conn
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(sql)
+
+        rows = cursor.fetchall()
+
+        cursor.close()
+
+        return rows
+
+    except cx_Oracle.Error as error:
+        print("Błąd podczas wykonania zapytania:", error)
+        return {'error': str(error)}
+```
+
+### Główna aplikacja
+
+```python
+from flask import Flask
+from base import connect_to_data_base
+from views import views_blueprint
+
+app = Flask(__name__)
+app.config['JSON_AS_ASCII'] = False
+
+conn = connect_to_data_base()
+app.register_blueprint(views_blueprint)
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
 ```

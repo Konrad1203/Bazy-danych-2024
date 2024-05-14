@@ -190,6 +190,34 @@ INSERT INTO Copy (copy_id, movie_id, on_loan) VALUES ('38', '8', 'Y');
 INSERT INTO Copy (copy_id, movie_id, on_loan) VALUES ('39', '4', 'Y');
 INSERT INTO Copy (copy_id, movie_id, on_loan) VALUES ('40', '6', 'Y');
 
-/* UZUPEŁNIĆ TABELE RENTAL */
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('2', '38', '2024-05-04', '2024-05-07');
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('13', '12', '2022-06-02', '2022-06-26');
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('7', '5', '2021-10-14', '2021-11-09');
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('17', '26', '2024-02-13', '2024-02-19');
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('13', '33', '2022-07-24', '2022-08-13');
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('15', '37', '2024-05-01', '2024-05-04');
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('1', '21', '2024-02-06', '2024-02-09');
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('8', '20', '2023-07-05', '2023-07-09');
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('8', '13', '2024-05-11', '2024-05-25');
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('12', '21', '2023-01-01', '2023-01-15');
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('7', '40', '2023-03-08', '2023-03-16');
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('20', '29', '2021-09-25', '2021-10-12');
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('20', '15', '2022-12-05', '2022-12-13');
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('2', '1', '2021-12-18', '2022-01-11');
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('11', '14', '2023-05-09', '2023-06-04');
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('9', '35', '2021-12-09', '2021-12-30');
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('12', '11', '2023-08-02', '2023-09-01');
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('18', '25', '2024-04-01', '2024-05-01');
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('16', '30', '2024-01-19', '2024-02-09');
+INSERT INTO Rental (client_id, copy_id, out_date, due_date) VALUES ('15', '27', '2023-03-08', '2023-03-24');
 
-/* UZUPEŁNIĆ TABELE RESERVATION */
+INSERT INTO Reservation (copy_id, client_id, reservation_date, reservation_expiry_date, status) VALUES ('8', '2', '2024-01-09', '2024-01-16', 'N');
+INSERT INTO Reservation (copy_id, client_id, reservation_date, reservation_expiry_date, status) VALUES ('22', '15', '2024-03-08', '2024-03-12', 'R');
+INSERT INTO Reservation (copy_id, client_id, reservation_date, reservation_expiry_date, status) VALUES ('31', '11', '2024-03-12', '2024-03-17', 'C');
+INSERT INTO Reservation (copy_id, client_id, reservation_date, reservation_expiry_date, status) VALUES ('10', '20', '2022-12-06', '2022-12-12', 'C');
+INSERT INTO Reservation (copy_id, client_id, reservation_date, reservation_expiry_date, status) VALUES ('7', '6', '2024-02-06', '2024-02-19', 'R');
+INSERT INTO Reservation (copy_id, client_id, reservation_date, reservation_expiry_date, status) VALUES ('10', '6', '2022-04-04', '2022-04-13', 'R');
+INSERT INTO Reservation (copy_id, client_id, reservation_date, reservation_expiry_date, status) VALUES ('11', '20', '2021-11-16', '2021-11-23', 'R');
+INSERT INTO Reservation (copy_id, client_id, reservation_date, reservation_expiry_date, status) VALUES ('1', '4', '2022-12-24', '2022-12-28', 'C');
+INSERT INTO Reservation (copy_id, client_id, reservation_date, reservation_expiry_date, status) VALUES ('11', '1', '2024-01-02', '2024-01-05', 'N');
+INSERT INTO Reservation (copy_id, client_id, reservation_date, reservation_expiry_date, status) VALUES ('5', '14', '2023-12-09', '2023-12-16', 'R');

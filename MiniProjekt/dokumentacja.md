@@ -316,7 +316,7 @@ JOIN Rental r ON c.copy_id = r.copy_id
 GROUP BY a.actor_id, a.firstname, a.lastname;
 ```
 ```sql
-SELECT * FROM ActorRentals;
+SELECT * FROM VW_ACTOR_RENTALS;
 ```
 ![vw_actor_rentals](imgs/views/vw_actor_rentals.png)
 
@@ -429,7 +429,7 @@ END;
 ```
 ![f_is_copy_available](imgs/functions/f_is_copy_available.png)
 
-
+![f_is_copy_available2](imgs/functions/f_is_copy_available2.png)
 ---
 
 
@@ -868,9 +868,10 @@ EXCEPTION
         raise_application_error(-20001, 'Error removing rental: ' || SQLERRM);
 END;
 ```
+---
+<br />
 
-
-### Backend
+## **<p align="center">Backend</p>**
 
 Aplikacja została zrealizowana w `Pythonie`, przy użyciu frameworka `Flask`.
 

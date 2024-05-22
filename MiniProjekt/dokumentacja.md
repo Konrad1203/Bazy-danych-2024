@@ -429,6 +429,8 @@ END;
 ```
 ![f_is_copy_available](imgs/functions/f_is_copy_available.png)
 
+Gdy podamy copy_id = -1 to otrzymamy error:
+
 ![f_is_copy_available2](imgs/functions/f_is_copy_available2.png)
 ---
 
@@ -538,11 +540,89 @@ END;
 
 ---
 
+#### f_user_has_reservation
+
+Funkcja sprawdza czy podany użytkonik złożył wcześniej rezerwacje na dany film.
+
+```sql
+CREATE OR REPLACE FUNCTION f_user_has_reservation(
+    user_id_input INT,
+    copy_id_input INT
+) RETURN BOOLEAN
+IS
+    v_count INT;
+BEGIN
+    SELECT COUNT(*)
+    INTO v_count
+    FROM Reservation
+    WHERE CLIENT_ID = user_id_input
+      AND copy_id = copy_id_input
+      AND STATUS = 'N';
+
+    RETURN v_count > 0;
+EXCEPTION
+    WHEN OTHERS THEN
+        raise_application_error(-20001, 'Error checking reservation: ' || SQLERRM);
+END;
+```
+
+![f_user_has_reservation](imgs/functions/f_user_has_reservation.png)
+
+```sql
+BEGIN
+    IF f_user_has_reservation(1, 1) THEN
+        DBMS_OUTPUT.PUT_LINE('User has reservation.');
+    ELSE
+        raise_application_error(-20001, 'Reservation does not exist.');
+    END IF;
+END;
+```
+
+Przy wywołaniu tej funkcji nie pojawia się żaden error więc można wnioskować, że działa poprawnie.
+
+---
+
+#### f_get_reservation_id
+
+Funkcja odpowiedzialna za pobranie `reservation_id` istniejącej rezerwacji z tabli `Reservation`.
+
+```sql 
+CREATE OR REPLACE FUNCTION f_get_reservation_id(
+    user_id_input INT,
+    copy_id_input INT
+) RETURN INT
+IS
+    v_reservation_id INT;
+BEGIN
+    IF NOT F_USER_HAS_RESERVATION(user_id_input, copy_id_input) THEN
+        raise_application_error(-20002, 'No such reservation.');
+    END IF;
+
+    SELECT reservation_id
+    INTO v_reservation_id
+    FROM Reservation
+    WHERE CLIENT_ID = user_id_input
+      AND COPY_ID = copy_id_input
+      AND STATUS = 'N';
+
+    RETURN v_reservation_id;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        raise_application_error(-20003, 'No matching reservation found.');
+    WHEN OTHERS THEN
+        raise_application_error(-20001, 'Error retrieving reservation_id: ' || SQLERRM);
+END;
+```
+Użycie:
+![f_get_reservation_id](imgs/functions/f_get_reservation_id.png)
+
+---
+
 ### Procedury
 
 #### p_add_reservation
 
-Procedura odpowiedzialna za dodanie nowej rezerwacji do tabeli Reservations
+Procedura odpowiedzialna za dodanie nowej rezerwacji do tabeli `Reservations`.
 
 ```sql
 CREATE OR REPLACE PROCEDURE p_add_reservation(
@@ -586,7 +666,7 @@ END;
 
 #### p_change_reservation_status
 
-Procedura odpowiedzialna za zmianę statusu rezerwacji
+Procedura odpowiedzialna za zmianę statusu rezerwacji. Jeżeli nowy status jest `C` - canceled to zmienia pole `is_available` w tabeli `Copy` na `Y`, w przeciwnym przypadku ustawia tą wartość na `N`.
 
 ```sql
 CREATE OR REPLACE PROCEDURE p_change_reservation_status(
@@ -628,10 +708,19 @@ EXCEPTION
         raise_application_error(-20003, 'Error updating reservation status: ' || SQLERRM);
 END;
 ```
+![p_change_reservation_status](imgs/procedures/p_change_reservation_status1.png)
+I teraz spróbujemy anulować rezerwacje:
+```sql
+begin
+    p_change_reservation_status(1,'C');
+end;    
+```
+![p_change_reservation_status](imgs/procedures/p_change_reservation_status2.png)I zmiana w tabeli `Copy`:
+![p_change_reservation_status](imgs/procedures/p_change_reservation_status3.png)
 
 #### p_add_new_rental
 
-Procedura jest odpowiedzialna za dodawanie nowego wypożyczenia. 
+Procedura jest odpowiedzialna za dodawanie nowego wypożyczenia. Jeżeli użytkownik złóżył wcześniej rezerwacje to procedura zmienia stus rezerwacji w tabeli `Reservation`. Jeśli użytkownik nie złożył rezerwacji to procedura zmienia stus kopii na niedostępną w tabeli `Copy`.
     
 ```sql
 CREATE OR REPLACE PROCEDURE p_add_new_rental(
@@ -642,6 +731,7 @@ CREATE OR REPLACE PROCEDURE p_add_new_rental(
 IS
     reservation_date_input DATE := SYSDATE;
     reservation_expiry_date_input DATE;
+    v_reservation_id INT;
 BEGIN
 
     -- Sprawdzenie, czy podana długość wypożyczenia jest większa niż 0
@@ -652,6 +742,20 @@ BEGIN
     -- Obliczenie daty wygaśnięcia rezerwacji poprzez dodanie liczby dni do daty rezerwacji
     reservation_expiry_date_input := reservation_date_input + rental_duration_input;
 
+    IF F_USER_HAS_RESERVATION(client_id_input, copy_id_input) THEN
+        -- jeśli użytkownik złożył wcześniej rezerwacji to zmień status w tabeli Reservation
+        v_reservation_id := F_GET_RESERVATION_ID(client_id_input, copy_id_input);
+        P_CHANGE_RESERVATION_STATUS(v_reservation_id, 'R');
+    ELSIF NOT F_IS_COPY_AVAILABLE(copy_id_input) THEN
+        raise_application_error(-20002, 'Error: Cannot rent unavailable copy');
+    ELSE
+        -- jeśli użytkownik nie złożył wcześniej rezerwacji to zmień status w tabeli Copy
+        UPDATE Copy
+        SET is_available = 'N'
+        WHERE copy_id = copy_id_input;
+    END IF;
+
+
     -- Wstawienie nowego wypożyczenia do tabeli Rental
     INSERT INTO Rental (client_id, copy_id, out_date, due_date)
     VALUES (client_id_input, copy_id_input, reservation_date_input, reservation_expiry_date_input);
@@ -660,9 +764,22 @@ BEGIN
     DBMS_OUTPUT.PUT_LINE('New rental added successfully.');
 EXCEPTION
     WHEN OTHERS THEN
-        raise_application_error(-20001, 'Error adding new rental: ' || SQLERRM);
+        raise_application_error(-20003, 'Error adding new rental: ' || SQLERRM);
 END;
 ```
+
+Użycie:
+Kopia o id = 2 jest dostępna:
+![p_add_new_rental](imgs/procedures/p_add_new_rental1.png)
+
+po wykonaniu procedury:
+![p_add_new_rental](imgs/procedures/p_add_new_rental2.png)
+
+![p_add_new_rental](imgs/procedures/p_add_new_rental3.png)
+
+![p_add_new_rental](imgs/procedures/p_add_new_rental4.png)
+
+--- 
 
 #### p_remove_rental
 
@@ -673,50 +790,46 @@ CREATE OR REPLACE PROCEDURE p_remove_rental(
     rental_id_input INT
 )
 IS
+    v_count INT;
 BEGIN
-    DELETE FROM Rental WHERE rental_id = rental_id_input;
+    SELECT COUNT(*)
+    INTO v_count
+    FROM Rental
+    WHERE rental_id = rental_id_input;
 
-    DBMS_OUTPUT.PUT_LINE('Rental removed successfully.');
+    -- jeśli wypożyczenie o taki id nie istnieje to error
+    IF v_count = 0 THEN
+        raise_application_error(-20002, 'Rental ID does not exist.');
+    ELSE
+        DELETE FROM Rental WHERE rental_id = rental_id_input;
+        DBMS_OUTPUT.PUT_LINE('Rental removed successfully.');
+    END IF;
+
 EXCEPTION
     WHEN OTHERS THEN
         raise_application_error(-20001, 'Error removing rental: ' || SQLERRM);
 END;
 ```
 
-#### p_add_rental_after_reservation
-
-Procedura odpowiada fizycznemu odebraniu filmu z wypożyczalni po wcześniejszej rezerwacji.
-
+Użycie: 
 ```sql
-CREATE OR REPLACE PROCEDURE p_add_rental_after_reservation(
-    client_id_input INT,
-    copy_id_input INT,
-    rental_duration_input INT,
-    reservation_id_input INT
-)
-IS
-BEGIN
-    -- Aktualizacja statusu rezerwacji
-    p_change_reservation_status(reservation_id_input, 'R');
-
-    -- Dodanie nowego wypożyczenia
-    p_add_new_rental(client_id_input, copy_id_input, rental_duration_input);
-
-    -- Zatwierdzenie zmian
-    COMMIT;
-EXCEPTION
-    WHEN OTHERS THEN
-        -- Wycofanie transakcji w przypadku błędu
-        ROLLBACK;
-END;
+begin
+    p_remove_rental(21);
+end;
 ```
+Kopia o copy_id = 2 jest teraz dostępna:
+![p_remove_rental](imgs/procedures/p_remove_rental.png)
 
-#### p_add_rental_without_reservation
+I został usunięty wiersz z tabeli `Rental`
 
-Analogicznie jak poprzednia procedura tylko bez wcześniejszej rezerwacji.
+---
+
+#### p_process_rental
+
+Prodecura wywołująca procedure odpowiedzialną za wypożyczenie 
 
 ```sql
-CREATE OR REPLACE PROCEDURE p_add_rental_without_reservation(
+CREATE OR REPLACE PROCEDURE p_process_rental (
     client_id_input INT,
     copy_id_input INT,
     rental_duration_input INT
@@ -734,10 +847,84 @@ EXCEPTION
         ROLLBACK;
 END;
 ```
+--- 
+
+#### p_process_reservation
+
+Tak jak poprzednio, procedura odpowiada w wyłowanie procedury dodania nowej rezerwacji i zatwierdzenia zmian.
+
+```sql
+CREATE OR REPLACE PROCEDURE p_process_reservation (
+    client_id_input INT,
+    copy_id_input INT,
+    rental_duration_input INT
+)
+IS
+BEGIN
+    -- Dodanie nowej rezerwacji
+    P_ADD_RESERVATION(client_id_input, copy_id_input, rental_duration_input);
+
+    -- Zatwierdzenie zmian
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Wycofanie transakcji w przypadku błędu
+        ROLLBACK;
+END;
+```
+---
+
+#### p_process_change_reservation_status
+
+Procedura odpowiada za wyłanie procedury do zmiany statusu rezerwacji i zatwierdzenia zmian. W przypadku błędu wywołuje `Rollback`.
+```sql
+CREATE OR REPLACE PROCEDURE p_process_change_reservation_status (
+    reservation_id_input INT,
+    status_input Char
+)
+IS
+BEGIN
+    -- Zmiana statusu rezerwacji
+    p_change_reservation_status(reservation_id_input, status_input);
+
+    -- Zatwierdzenie zmian
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Wycofanie transakcji w przypadku błędu
+        ROLLBACK;
+END;
+```
+---
+
+#### p_process_rental_remove
+
+Procedura odpowiada za wywłanie procedury do usuwania istniejących wypożyczeń i zatwierdzania zmian w bazie danych.
+
+```sql
+CREATE OR REPLACE PROCEDURE p_process_rental_remove (
+    rental_id_input INT
+)
+IS
+BEGIN
+    -- Usunięcie wypożyczenia
+    p_remove_rental(rental_id_input);
+
+    -- Zatwierdzenie zmian
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Wycofanie transakcji w przypadku błędu
+        ROLLBACK;
+END;
+```
+---
 
 ### Triggery
 
 #### t_copy_check_available
+
+Triger sprawdza czy po zmianach w tabeli `Copy`, pole `is_available` ma wartość `N` albo `Y`.
 
 ```sql
 CREATE OR REPLACE TRIGGER t_copy_check_available
@@ -750,8 +937,12 @@ BEGIN
 END;
 ```
 
+![t_copy_check_available](imgs/triggers/t_copy_check_available.png)
 
 #### t_reservation_add
+
+Triger odpowiada za walidacje danych przy dodawaniu nowej rezerwacji oraz za zmianę status w tabeli `Copy`.
+
 ```sql
 CREATE OR REPLACE TRIGGER t_reservation_add
 BEFORE INSERT ON reservation
@@ -802,8 +993,10 @@ END;
 
 #### t_reservation_update
 
+Triger sprawdza czy nowy status jest `C`, `N` albo `R` oraz aktualizuje status w tabeli `Copy`.
+
 ```sql
-    CREATE OR REPLACE TRIGGER t_reservation_update
+CREATE OR REPLACE TRIGGER t_reservation_update
 BEFORE UPDATE ON Reservation
 FOR EACH ROW
 DECLARE
@@ -830,7 +1023,11 @@ BEGIN
 END;
 ```
 
+![t_reservation_update](imgs/triggers/t_reservation_update.png)
+
 #### t_rental_add
+
+Triger odpowiada za zmianę statusu koppi w tabeli `Copy` przy dodawaniu nowego wypożyczenia.
 
 ```sql
 CREATE OR REPLACE TRIGGER t_rental_add
@@ -851,6 +1048,8 @@ END;
 
 
 #### t_rental_removal
+
+Triger odpowiada za zmianę statusu koppi w tabeli `Copy` przy usuwaniu wypożyczenia.
 
 ```sql
 CREATE OR REPLACE TRIGGER t_rental_removal

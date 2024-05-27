@@ -31,12 +31,12 @@
 
 ### Opis tabel
 
-#### Clients (lista klientów wypożyczalni)
-- client_id - id klienta (to samo co login_id)
-- firstname - imię
-- lastname - nazwisko
-- address - adres
-- phone - numer telefonu
+#### `Clients` - tabela zarejestrowanych klientów wypożyczalni
+- client_id - id klienta (to samo co login_id),
+- firstname - imię,
+- lastname - nazwisko,
+- address - adres,
+- phone - numer telefonu.
 
 ```sql
 CREATE TABLE Clients (
@@ -52,16 +52,16 @@ CREATE TABLE Clients (
 
 ---
 
-#### Reservation (tabela z rezerwacjami filmów)
-- reservation_id - id rezerwacji
-- copy_id - id egzemplarza filmu
-- client_id - id klienta
-- reservation_date - data rezerwacji 
-- reservation_expiry_date - data wygaśnięcia rezerwacji
-- status - akutalny status rezerwacji
-    - `N` - nowa rezerwacja
-    - `C` - rezerwacja anulowana
-    - `R` - rezerwacaj zrealizowana
+#### `Reservation` - tabela z rezerwacjami filmów do przyszłego wypożyczenia
+- reservation_id - id rezerwacji,
+- copy_id - id egzemplarza filmu,
+- client_id - id klienta,
+- reservation_date - data rezerwacji,
+- reservation_expiry_date - data wygaśnięcia rezerwacji,
+- status - akutalny status rezerwacji,
+    - `N` - nowa rezerwacja,
+    - `C` - rezerwacja anulowana,
+    - `R` - rezerwacaj zrealizowana.
 
 ```sql
 CREATE TABLE Reservation (
@@ -83,12 +83,13 @@ ALTER TABLE Reservation ADD CONSTRAINT Reservation_Copy
 ![reservations](imgs/tables/reservations.png)
 ---
 
-#### Rental (informacje dotyczące wypożyczeń filmów przez klientów)
-- rental_id - id wypożyczenia
-- client_id - id klienta
-- copy_id - id wypożyczonego egzemplarza
-- out_date - data wypożyczenia filmu
-- due_date - okres, na który film został wypożyczony
+#### `Rental` - tabela z informacjami o wypożyczeniach filmów przez klientów (aktualne oraz zwrócone)
+- rental_id - id wypożyczenia,
+- client_id - id klienta,
+- copy_id - id wypożyczonego egzemplarza,
+- out_date - data wypożyczenia filmu,
+- due_date - okres, na który film został wypożyczony,
+- return_date - data faktycznego zwrotu filmu (null jeśli nie zwrócony).
 
 ```sql
 CREATE TABLE Rental (
@@ -97,6 +98,7 @@ CREATE TABLE Rental (
     copy_id integer  NOT NULL,
     out_date date  NOT NULL,
     due_date date  NOT NULL,
+    return_date date NULL default NULL,
     CONSTRAINT Rental_pk PRIMARY KEY (rental_id)
 );
 ALTER TABLE Rental ADD CONSTRAINT Copy_Rental
@@ -110,7 +112,7 @@ ALTER TABLE Rental ADD CONSTRAINT Rental_Clients
 ![rental](imgs/tables/rental.png)
 ---
 
-#### Copy (lista fizycznych kopii danego filmu)
+#### `Copy` - tabela fizycznych kopii danego filmu
 - copy_id - id danej kopii
 - movie_id - id jej filmu
 - is_available - czy wypożyczona lub zarezerwowana ("Y", jeśli jest dostępna, "N" jeśli nie)
@@ -130,7 +132,7 @@ ALTER TABLE Copy ADD CONSTRAINT Copy_Movies
 
 ---
 
-#### Categories (lista kategorii)
+#### `Categories` - tabela kategorii filmów
 - category_id - id kategorii
 - name - nazwa kategorii
   
@@ -146,7 +148,7 @@ CREATE TABLE Categories (
 
 ---
 
-#### Movies (tabela zawierające informacje o filmach)
+#### `Movies` - tabela zawierająca informacje o filmach
 - movie_id - id filmu
 - name - nazwa filmu
 - title - tytuł filmu
@@ -181,7 +183,7 @@ ALTER TABLE Movies ADD CONSTRAINT Movies_Categories
 
 ---
 
-#### Actors (lista aktorów)
+#### `Actors` - tabela aktorów
 - actor_id - id aktora
 - firstname - imię aktora
 - lastname - nazwisko aktora
@@ -199,7 +201,7 @@ CREATE TABLE Actors (
 
 ---
 
-#### Actors_in_movie (tabela łącząca aktora z filmem)
+#### `Actors_in_movie` - tabela łącząca aktora z filmem (do relacji wiele do wielu)
 - movie_id - id filmu
 - actor_id - id aktora
 - role - rola aktora w filmie (jaką postać gra)
@@ -225,7 +227,7 @@ ALTER TABLE Actors_in_movie ADD CONSTRAINT Actors_in_movie_Movies
 
 ### Widoki
 
-#### vw_available_copies
+#### `vw_available_copies`
 
 Widok dostępnych kopii filmów wyświetla listę dostępnych kopii filmów wraz z ich szczegółami, takimi jak tytuł filmu, kategoria, data wydania, dostępność itp.
 
@@ -250,8 +252,30 @@ select * from vw_available_copies;
 
 ---
 
+#### `vw_currently_borrowed_copies`
 
-#### vw_current_reservations
+Widok aktualnie wypożyczonych kopii z informacjami o kliencie, filmie oraz dniami opóźnienia lub 0 gdy nie minął termin zwrotu. Dane posortowane są w kolejności malejącej liczby dni opóźnienia zwrotu.
+
+```sql
+CREATE OR REPLACE VIEW vw_currently_borrowed_copies
+AS
+    SELECT r.CLIENT_ID, cl.FIRSTNAME || ' ' || cl.LASTNAME as Name,
+        r.COPY_ID, m.TITLE, r.OUT_DATE, r.DUE_DATE,
+       GREATEST(TRUNC(SYSDATE) - TRUNC(r.DUE_DATE), 0) AS Days_of_delay
+    FROM RENTAL r
+    JOIN COPY c on c.COPY_ID = r.COPY_ID
+    JOIN MOVIES m on m.MOVIE_ID = c.MOVIE_ID
+    JOIN CLIENTS cl on cl.CLIENT_ID = r.CLIENT_ID
+    WHERE RETURN_DATE is NULL
+    ORDER BY Days_of_delay DESC;
+```
+```sql
+SELECT * FROM vw_currently_borrowed_copies;
+```
+![vw_currently_borrowed_copies](imgs/views/vw_currently_borrowed_copies.png)
+
+---
+#### `vw_current_reservations`
 
 Widok rezerwacji aktualnych klientów pokazuje rezerwacje aktualnych klientów wraz z danymi klientów, filmami, na które zarezerwowali kopie, datami rezerwacji itp.
 
@@ -277,7 +301,8 @@ select * from vw_current_reservations;
 
 ---
 
-#### vw_movie_popularity
+#### `vw_movie_popularity`
+Widok pokazujący filmy od najpopularniejszego do najmniej popularnego względem sumarycznej liczby wypożyczeń jego kopii.
 
 ```sql
 CREATE VIEW vw_movie_popularity AS
@@ -297,8 +322,32 @@ select * from vw_movie_popularity;
 
 ---
 
+#### `vw_clients_delays_sum`
+Widok pokazujący klientów i ich sumę spóźnień w oddawaniu filmów względem aktualnie wypożyczonych oraz tych już oddanych z opóźnieniem. Wyniki posortowane są od tych klientów z największą liczbą dni.
+```sql
+CREATE OR REPLACE VIEW vw_clients_delays_sum
+AS
+    SELECT
+        cl.CLIENT_ID, cl.FIRSTNAME || ' ' || cl.LASTNAME AS Name,
+        SUM(CASE
+                WHEN r.RETURN_DATE IS NULL THEN
+                    GREATEST(TRUNC(SYSDATE) - TRUNC(r.DUE_DATE), 0)
+                ELSE
+                    GREATEST(TRUNC(r.RETURN_DATE) - TRUNC(r.DUE_DATE), 0)
+            END
+        ) AS Total_days_of_delay
+    FROM RENTAL r
+    JOIN CLIENTS cl ON cl.CLIENT_ID = r.CLIENT_ID
+    GROUP BY cl.CLIENT_ID, cl.FIRSTNAME, cl.LASTNAME
+    ORDER BY Total_days_of_delay DESC;
+```
+```sql
+SELECT * FROM vw_clients_delays_sum;
+```
+![vw_clients_delays_sum](imgs/views/vw_clients_delays_sum.png)
 
-#### vw_actor_rentals
+---
+#### `vw_actor_rentals`
 
 Widok przedstawiający listę aktorów występujących w obecnie wypożyczonych filmach oraz liczbę filmów, w których każdy aktor wystąpił.
 
@@ -322,9 +371,9 @@ SELECT * FROM VW_ACTOR_RENTALS;
 
 ---
 
-#### vw_most_popular_actors_per_category
+#### `vw_most_popular_actors_per_category`
 
-Widok przedstawia najpopularniejszego aktora występującego w filach danej kategorii. 
+Widok przedstawia najpopularniejszego aktora występującego w filmach danej kategorii. 
 
 ```sql
 CREATE OR REPLACE VIEW vw_most_popular_actors_per_category AS
@@ -351,25 +400,26 @@ SELECT * FROM vw_most_popular_actors_per_category;
 
 ---
 
-### Możliwe widoki do zrealizowania: 
-<!-- jak bedzie czas to może zrobimy  -->
-
-1. Widok Aktywnych Wypożyczeń: Ten widok mógłby wyświetlać aktualne wypożyczenia, obejmujące informacje o klientach, filmach, kopii filmów, datach wypożyczenia i zwrotu itp.
-2. Widok Klientów z Opóźnieniami Zwrotu: Ten widok mógłby identyfikować klientów, którzy mają opóźnione zwroty i wyświetlać informacje o klientach, filmach, które wypożyczyli, datach wypożyczenia i zwrotu oraz czasie opóźnienia.
-
-
 ### Funkcje
 
-#### f_get_client_reservations
+#### `f_get_client_reservations`
 
-Funkcja `f_get_client_reservations` umożliwia pobranie listy rezerwacji dla określonej osoby na podstawie jej identyfikatora klienta. Zwraca informacje o identyfikatorze rezerwacji, tytule filmu, dacie rezerwacji, dacie wygaśnięcia rezerwacji i statusie rezerwacji, co ułatwia zarządzanie rezerwacjami klientów w systemie wypożyczalni filmów.
+Funkcja ta umożliwia pobranie listy rezerwacji dla określonej osoby na podstawie jej identyfikatora klienta. Zwraca informacje o identyfikatorze rezerwacji, tytule filmu, dacie rezerwacji, dacie wygaśnięcia rezerwacji i statusie rezerwacji, co ułatwia zarządzanie rezerwacjami klientów w systemie wypożyczalni filmów.
 
 ```sql
-CREATE OR REPLACE FUNCTION f_get_client_reservations(client_id_input INT) 
+CREATE OR REPLACE FUNCTION f_get_client_reservations(client_id_input INT)
 RETURN SYS_REFCURSOR
 IS
+    is_person INT;
     reservation_cursor SYS_REFCURSOR;
 BEGIN
+    -- Sprawdzamy czy istnieje taka osoba w systemie
+    SELECT count(*) INTO is_person FROM CLIENTS
+    WHERE CLIENT_ID = client_id_input;
+    IF is_person < 1
+        THEN RAISE_APPLICATION_ERROR(-20000, 'Nie ma takiego użytkownika');
+    END IF;
+
     OPEN reservation_cursor FOR
         SELECT r.reservation_id,
                m.title AS movie_title,
@@ -388,12 +438,16 @@ END;
 select f_get_client_reservations(1) from dual;
 ```
 ![f_get_client_reservations](imgs/functions/f_get_client_reservations.png)
+```sql
+select f_get_client_reservations(73) from dual;
+```
+![f_get_client_reservations_error](imgs/functions/f_get_client_reservations_error.png)
 
 ---
 
-#### f_is_copy_available
+#### `f_is_copy_available`
 
-Funkcja `f_is_copy_available` umożliwia sprawdzenie statusu konkretnej kopii filmu na podstawie jej identyfikatora. Zwraca informacje o tym, czy kopia jest aktualnie zarezerwowana, wypożyczona, dostępna, lub czy nie istnieje w bazie danych. Jest to przydatne narzędzie do zarządzania dostępnością kopii filmów w systemie wypożyczalni.
+Funkcja umożliwia sprawdzenie statusu konkretnej kopii filmu na podstawie jej identyfikatora. Zwraca informacje o tym, czy kopia jest aktualnie zarezerwowana, wypożyczona, dostępna, lub czy nie istnieje w bazie danych. Jest to przydatne narzędzie do zarządzania dostępnością kopii filmów w systemie wypożyczalni.
 
 ```sql
 CREATE OR REPLACE FUNCTION f_is_copy_available(copy_id_input INT)
@@ -407,10 +461,8 @@ BEGIN
     FROM Copy
     WHERE copy_id = copy_id_input;
 
-    IF is_copy_anvailable = 'Y' THEN
-        RETURN TRUE;
-    ELSE
-        RETURN FALSE;
+    IF is_copy_anvailable = 'Y' THEN RETURN TRUE;
+    ELSE RETURN FALSE;
     END IF;
 
 EXCEPTION
@@ -429,22 +481,30 @@ END;
 ```
 ![f_is_copy_available](imgs/functions/f_is_copy_available.png)
 
-Gdy podamy copy_id = -1 to otrzymamy error:
+Gdy podamy copy_id = -1 to otrzymamy błąd:
 
 ![f_is_copy_available2](imgs/functions/f_is_copy_available2.png)
 ---
 
 
-#### f_get_movies_by_category
+#### `f_get_movies_by_category`
 
-Funkcja `f_get_movies_by_category` zwraca filmy należące do określonej kategorii na podstawie przekazanego identyfikatora kategorii. Zestawienie zawiera nazwę kategorii, tytuł filmu, opis filmu, datę premiery, czas trwania, ocenę, i reżysera.
+Funkcja zwraca filmy należące do określonej kategorii na podstawie przekazanego identyfikatora kategorii. Zestawienie zawiera nazwę kategorii, tytuł filmu, opis filmu, datę premiery, czas trwania, ocenę, i reżysera.
 
 ```sql
 CREATE OR REPLACE FUNCTION f_get_movies_by_category(category_id_input INT)
 RETURN SYS_REFCURSOR
 IS
+    is_category INT;
     movie_cursor SYS_REFCURSOR;
 BEGIN
+    -- Sprawdzamy czy istnieje taka kategoria
+    SELECT count(*) INTO is_category FROM CATEGORIES
+    WHERE CATEGORY_ID = category_id_input;
+    IF is_category < 1
+        THEN RAISE_APPLICATION_ERROR(-20000, 'Nie ma takiej kategorii');
+    END IF;
+
     OPEN movie_cursor FOR
         SELECT
             c.name AS category_name,
@@ -466,11 +526,14 @@ END;
 select f_get_movies_by_category(2) from dual;
 ```
 ![f_get_movies_by_category](imgs/functions/f_get_movies_by_category.png)
-
+```sql
+select f_get_movies_by_category(123) from dual;
+```
+![f_get_movies_by_category_error](imgs/functions/f_get_movies_by_category_error.png)
 
 ---
 
-#### f_check_client_exist
+#### `f_check_client_exist`
 Funkcja sprawdzająca czy dany client_id istnieje
 ```sql
 CREATE OR REPLACE FUNCTION f_check_client_exist(client_id_input INT) 
@@ -505,7 +568,7 @@ END;
 
 ---
 
-#### f_check_copy_exist
+#### `f_check_copy_exist`
 
 Funkcja sprawdza czy podany copy_id istnieje:
 ```sql
@@ -540,7 +603,7 @@ END;
 
 ---
 
-#### f_user_has_reservation
+#### `f_user_has_reservation`
 
 Funkcja sprawdza czy podany użytkonik złożył wcześniej rezerwacje na dany film.
 
@@ -578,11 +641,11 @@ BEGIN
 END;
 ```
 
-Przy wywołaniu tej funkcji nie pojawia się żaden error więc można wnioskować, że działa poprawnie.
+Przy wywołaniu tej funkcji nie pojawia się żaden błąd więc można wnioskować, że działa poprawnie.
 
 ---
 
-#### f_get_reservation_id
+#### `f_get_reservation_id`
 
 Funkcja odpowiedzialna za pobranie `reservation_id` istniejącej rezerwacji z tabli `Reservation`.
 
@@ -620,7 +683,7 @@ Użycie:
 
 ### Procedury
 
-#### p_add_reservation
+#### `p_add_reservation`
 
 Procedura odpowiedzialna za dodanie nowej rezerwacji do tabeli `Reservations`.
 
@@ -646,7 +709,6 @@ BEGIN
     INSERT INTO Reservation (client_id, copy_id, reservation_date, reservation_expiry_date, status)
     VALUES (client_id_input, copy_id_input, reservation_date_input, reservation_expiry_date_input, 'N');
 
-    
     DBMS_OUTPUT.PUT_LINE('Reservation added successfully.');
 EXCEPTION
     WHEN OTHERS THEN
@@ -664,9 +726,9 @@ END;
 
 ---
 
-#### p_change_reservation_status
+#### `p_change_reservation_status`
 
-Procedura odpowiedzialna za zmianę statusu rezerwacji. Jeżeli nowy status jest `C` - canceled to zmienia pole `is_available` w tabeli `Copy` na `Y`, w przeciwnym przypadku ustawia tą wartość na `N`.
+Procedura odpowiedzialna za zmianę statusu rezerwacji. Jeżeli nowy status jest `C` (cancelled) to zmienia pole `is_available` w tabeli `Copy` na `Y`, w przeciwnym przypadku ustawia tą wartość na `N`.
 
 ```sql
 CREATE OR REPLACE PROCEDURE p_change_reservation_status(
@@ -718,9 +780,10 @@ end;
 ![p_change_reservation_status](imgs/procedures/p_change_reservation_status2.png)I zmiana w tabeli `Copy`:
 ![p_change_reservation_status](imgs/procedures/p_change_reservation_status3.png)
 
-#### p_add_new_rental
+---
+#### `p_add_new_rental`
 
-Procedura jest odpowiedzialna za dodawanie nowego wypożyczenia. Jeżeli użytkownik złóżył wcześniej rezerwacje to procedura zmienia stus rezerwacji w tabeli `Reservation`. Jeśli użytkownik nie złożył rezerwacji to procedura zmienia stus kopii na niedostępną w tabeli `Copy`.
+Procedura jest odpowiedzialna za dodawanie nowego wypożyczenia. Jeżeli użytkownik złożył wcześniej rezerwację to procedura zmienia status rezerwacji w tabeli `Reservation`. Jeśli użytkownik nie złożył rezerwacji to procedura zmienia status kopii na niedostępną w tabeli `Copy`.
     
 ```sql
 CREATE OR REPLACE PROCEDURE p_add_new_rental(
@@ -760,7 +823,6 @@ BEGIN
     INSERT INTO Rental (client_id, copy_id, out_date, due_date)
     VALUES (client_id_input, copy_id_input, reservation_date_input, reservation_expiry_date_input);
 
-
     DBMS_OUTPUT.PUT_LINE('New rental added successfully.');
 EXCEPTION
     WHEN OTHERS THEN
@@ -781,29 +843,28 @@ po wykonaniu procedury:
 
 --- 
 
-#### p_remove_rental
+#### `p_return_rental`
 
-Procedura opowiedzialna za usuwanie kopii z tabeli wypożyczeń - `Rental`. Odpowiada fizycznemu zwrotowi filmu do wypożyczalni.
+Procedura opowiedzialna za zwrot kopii i uzupełnienie pola `RETURN_DATE` w `Rental`. Odpowiada fizycznemu zwrotowi filmu do wypożyczalni.
 
 ```sql
-CREATE OR REPLACE PROCEDURE p_remove_rental(
-    rental_id_input INT
-)
+create PROCEDURE P_RETURN_RENTAL (rental_id_input INT)
 IS
     v_count INT;
 BEGIN
-    SELECT COUNT(*)
-    INTO v_count
+    -- Sprawdzamy czy istnieje takie wypożyczenie
+    SELECT COUNT(*) INTO v_count
     FROM Rental
     WHERE rental_id = rental_id_input;
-
-    -- jeśli wypożyczenie o taki id nie istnieje to error
     IF v_count = 0 THEN
         raise_application_error(-20002, 'Rental ID does not exist.');
-    ELSE
-        DELETE FROM Rental WHERE rental_id = rental_id_input;
-        DBMS_OUTPUT.PUT_LINE('Rental removed successfully.');
     END IF;
+
+    UPDATE RENTAL
+    SET RETURN_DATE = SYSDATE
+    WHERE RENTAL_ID = rental_id_input;
+
+    DBMS_OUTPUT.PUT_LINE('Copy returned successfully.');
 
 EXCEPTION
     WHEN OTHERS THEN
@@ -814,19 +875,19 @@ END;
 Użycie: 
 ```sql
 begin
-    p_remove_rental(21);
+    p_return_rental(21);
 end;
 ```
 Kopia o copy_id = 2 jest teraz dostępna:
 ![p_remove_rental](imgs/procedures/p_remove_rental.png)
 
-I został usunięty wiersz z tabeli `Rental`
+I oczywiście uzupełniło się pole RETURN_DATE.
 
 ---
 
-#### p_process_rental
+#### `p_process_rental`
 
-Prodecura wywołująca procedure odpowiedzialną za wypożyczenie 
+Prodecura wywołująca procedurę odpowiedzialną za wypożyczenie 
 
 ```sql
 CREATE OR REPLACE PROCEDURE p_process_rental (
@@ -849,9 +910,9 @@ END;
 ```
 --- 
 
-#### p_process_reservation
+#### `p_process_reservation`
 
-Tak jak poprzednio, procedura odpowiada w wyłowanie procedury dodania nowej rezerwacji i zatwierdzenia zmian.
+Tak jak poprzednio, procedura odpowiada w wywołanie procedury dodania nowej rezerwacji i zatwierdzenia zmian.
 
 ```sql
 CREATE OR REPLACE PROCEDURE p_process_reservation (
@@ -874,9 +935,9 @@ END;
 ```
 ---
 
-#### p_process_change_reservation_status
+#### `p_process_change_reservation_status`
 
-Procedura odpowiada za wyłanie procedury do zmiany statusu rezerwacji i zatwierdzenia zmian. W przypadku błędu wywołuje `Rollback`.
+Procedura odpowiada za wyłanie procedury do zmiany statusu rezerwacji i zatwierdzenia zmian. W przypadku błędu wywołuje komendą `Rollback`.
 ```sql
 CREATE OR REPLACE PROCEDURE p_process_change_reservation_status (
     reservation_id_input INT,
@@ -897,18 +958,18 @@ END;
 ```
 ---
 
-#### p_process_rental_remove
+#### `p_process_rental_return`
 
-Procedura odpowiada za wywłanie procedury do usuwania istniejących wypożyczeń i zatwierdzania zmian w bazie danych.
+Procedura odpowiada za wywołanie procedury do usuwania istniejących wypożyczeń i zatwierdzania zmian w bazie danych.
 
 ```sql
-CREATE OR REPLACE PROCEDURE p_process_rental_remove (
+CREATE OR REPLACE PROCEDURE p_process_rental_return (
     rental_id_input INT
 )
 IS
 BEGIN
-    -- Usunięcie wypożyczenia
-    p_remove_rental(rental_id_input);
+    -- Zwrócenie kopii filmu
+    p_return_rental(rental_id_input);
 
     -- Zatwierdzenie zmian
     COMMIT;
@@ -919,10 +980,54 @@ EXCEPTION
 END;
 ```
 ---
+#### `update_copy_availability`
+Procedura odpowiedzialna za aktualizację pola `IS_AVAILABLE` w tabeli `Copy` w przypadku, gdy występują pewne nieprawidłowości. Sprawdzamy czy dana kopia jest zarezerwowana lub wypożyczona. Jeśli tak to poprawiamy pole na `Y`. Jeśli nie to ustawiamy na `N`.
+```sql
+CREATE OR REPLACE PROCEDURE update_copy_availability IS
+BEGIN
+    FOR copy_record IN (SELECT COPY_ID FROM COPY) LOOP
+        DECLARE
+            v_rental_count NUMBER;
+            v_reservation_count NUMBER;
+        BEGIN
+            -- Sprawdzamy, czy kopia jest wypożyczona
+            SELECT COUNT(*) INTO v_rental_count
+            FROM RENTAL
+            WHERE COPY_ID = copy_record.COPY_ID
+              AND RETURN_DATE IS NULL;
 
+            -- Sprawdzamy, czy kopia jest zarezerwowana
+            SELECT COUNT(*) INTO v_reservation_count
+            FROM RESERVATION
+            WHERE STATUS = 'N' AND COPY_ID = copy_record.COPY_ID;
+
+            -- Aktualizujemy dostępność kopii
+            IF v_rental_count > 0 OR v_reservation_count > 0 THEN
+                UPDATE COPY
+                SET is_available = 'N'
+                WHERE COPY_ID = copy_record.COPY_ID;
+            ELSE
+                UPDATE COPY
+                SET is_available = 'Y'
+                WHERE COPY_ID = copy_record.COPY_ID;
+            END IF;
+        END;
+    END LOOP;
+
+    COMMIT;
+END;
+```
+W ten sposób można z niej skorzystać:
+```sql
+BEGIN
+    update_copy_availability();
+END;
+```
+
+---
 ### Triggery
 
-#### t_copy_check_available
+#### `t_copy_check_available`
 
 Triger sprawdza czy po zmianach w tabeli `Copy`, pole `is_available` ma wartość `N` albo `Y`.
 
@@ -939,9 +1044,10 @@ END;
 
 ![t_copy_check_available](imgs/triggers/t_copy_check_available.png)
 
-#### t_reservation_add
+---
+#### `t_reservation_add`
 
-Triger odpowiada za walidacje danych przy dodawaniu nowej rezerwacji oraz za zmianę status w tabeli `Copy`.
+Triger odpowiada za walidacje danych przy dodawaniu nowej rezerwacji oraz za zmianę statusu w tabeli `Copy`.
 
 ```sql
 CREATE OR REPLACE TRIGGER t_reservation_add
@@ -975,14 +1081,14 @@ BEGIN
     UPDATE copy SET is_available = 'N' WHERE copy_id = :NEW.copy_id;
 END;
 ```
-Test trigera - najpierw osoba o id 1 rezerwuje fild o copy_id 1, a następnei osoba o id 2 próbuje zarezerwować ten sam film:
-Pierwsze wywołanie - wszystko działa:
+Test trigera - na początku osoba o id=1 rezerwuje film o copy_id=1, a następnei osoba o id=2 próbuje zarezerwować ten sam film:
+Pierwsza operacja - wszystko działa:
 ```sql
 BEGIN
     P_ADD_RESERVATION(1, 1, 10);
 END;
 ```
-Drugie - pojawia się bład:
+Drugie polecenie - pojawia się błąd:
 ```sql
 BEGIN
     P_ADD_RESERVATION(2, 1, 10);
@@ -991,9 +1097,9 @@ END;
 ![t_reservation_add](imgs/triggers/t_reservation_add.png)
 ---
 
-#### t_reservation_update
+#### `t_reservation_update`
 
-Triger sprawdza czy nowy status jest `C`, `N` albo `R` oraz aktualizuje status w tabeli `Copy`.
+Triger sprawdza czy nowy status skłąda się ze znaku `C`, `N` lub `R` oraz aktualizuje status w tabeli `Copy`.
 
 ```sql
 CREATE OR REPLACE TRIGGER t_reservation_update
@@ -1025,9 +1131,10 @@ END;
 
 ![t_reservation_update](imgs/triggers/t_reservation_update.png)
 
-#### t_rental_add
+---
+#### `t_rental_add`
 
-Triger odpowiada za zmianę statusu koppi w tabeli `Copy` przy dodawaniu nowego wypożyczenia.
+Triger odpowiada za zmianę statusu kopii w tabeli `Copy` przy dodawaniu nowego wypożyczenia.
 
 ```sql
 CREATE OR REPLACE TRIGGER t_rental_add
@@ -1046,26 +1153,30 @@ EXCEPTION
 END;
 ```
 
+---
+#### `t_rental_return`
 
-#### t_rental_removal
-
-Triger odpowiada za zmianę statusu koppi w tabeli `Copy` przy usuwaniu wypożyczenia.
+Triger odpowiada za zmianę statusu kopii w tabeli `Copy` przy zwracaniu wypożyczenia.
 
 ```sql
-CREATE OR REPLACE TRIGGER t_rental_removal
-AFTER DELETE ON Rental
+CREATE OR REPLACE TRIGGER t_rental_return
+AFTER UPDATE ON Rental
 FOR EACH ROW
 BEGIN
-    -- Aktualizacja stanu dostępności kopii w tabeli Copy
-    UPDATE Copy
-    SET is_available = 'Y'
-    WHERE copy_id = :OLD.copy_id;
+    -- Sprawdamy czy zmiana dotyczyła zwrotu filmu
+    IF :OLD.return_date IS NULL AND :NEW.return_date IS NOT NULL THEN
+        -- Aktualizacja stanu dostępności kopii w tabeli Copy
+        UPDATE Copy
+        SET is_available = 'Y'
+        WHERE copy_id = :OLD.copy_id;
 
-    DBMS_OUTPUT.PUT_LINE('Rental removed successfully.');
+        DBMS_OUTPUT.PUT_LINE('Rental returned successfully.');
+    END IF;
 EXCEPTION
     WHEN OTHERS THEN
-        raise_application_error(-20001, 'Error removing rental: ' || SQLERRM);
+        raise_application_error(-20001, 'Error returning rental: ' || SQLERRM);
 END;
+
 ```
 ---
 <br />

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Reservations</title>
+</head>
+<body>
+    <h1>Client Reservations</h1>
+    <p>Client ID: {{ client_id }}</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Reservation ID</th>
+                <th>Movie Title</th>
+                <th>Reservation Date</th>
+                <th>Reservation Expiry Date</th>
+                <th>Status</th>
+                <th>Cancel</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in reservations %}
+            <tr>
+                <td>{{ row[0] }}</td>
+                <td>{{ row[1] }}</td>
+                <td>{{ row[2] }}</td>
+                <td>{{ row[3] }}</td>
+                <td>{{ row[4] }}</td>
+                <td>
+                    <form action="/cancel_reservation/{{ row[0] }}" method="POST" data-client-id="{{ client_id }}">
+                        <input type="hidden" name="reservation_id" value="{{ row[0] }}">
+                        <input type="hidden" name="data-client-id" value="{{ client_id }}">
+                        <button type="submit">Cancel</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

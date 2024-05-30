@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actor Rentals</title>
+    <style>
+        table {
+            width: 80%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Actor Rentals</h1>
+    <table>
+        <tr>
+            <th>Actor ID</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Number of Movies</th>
+        </tr>
+        {% for actor in actors %}
+        <tr>
+            <td>{{ actor[0] }}</td>
+            <td>{{ actor[1] }}</td>
+            <td>{{ actor[2] }}</td>
+            <td>{{ actor[3] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

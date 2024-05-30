@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Copies</title>
+</head>
+<body>
+    <h1>Available Copies</h1>
+    <table>
+        <tr>
+            <th>Copy ID</th>
+            <th>Movie ID</th>
+            <th>Status</th>
+            <th>Release Date</th>
+            <th>Duration</th>
+            <th>Action</th>
+        </tr>
+        {% for copy in copies %}
+        <tr>
+            <td>{{ copy[0] }}</td>
+            <td>{{ copy[1] }}</td>
+            <td>{{ copy[2] }}</td>
+            <td>{{ copy[3].strftime('%Y-%m-%d') }}</td>
+            <td>{{ copy[4] }}</td>
+            <td>
+                <form action="/reserve" method="post">
+                    <input type="hidden" name="copy_id" value="{{ copy[0] }}">
+                    <input type="submit" value="Reserve">
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

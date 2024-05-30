@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservation Form</title>
+</head>
+<body>
+    <h1>Reservation Form</h1>
+    <form action="/add_reservation" method="post">
+        <label for="copy_id">Copy ID:</label>
+        <input type="text" id="copy_id" name="copy_id" value="{{ copy_id }}" readonly><br>
+        <!-- Include other fields for reservation details -->
+        <label for="client_id">Client ID:</label>
+        <input type="text" id="client_id" name="client_id"><br>
+        <label for="rental_duration">Rental Duration:</label>
+        <input type="text" id="rental_duration" name="rental_duration"><br>
+        <input type="submit" value="Submit Reservation">
+    </form>
+</body>
+</html>

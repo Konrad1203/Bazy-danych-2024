@@ -400,6 +400,27 @@ SELECT * FROM vw_most_popular_actors_per_category;
 
 ---
 
+#### VW_MOVIES_WITH_CATEGORY
+
+Widok wyświetla informacje o wszystkich filmach, które należą do wypożyczalni.
+
+```sql
+CREATE OR REPLACE VIEW vw_movies_with_category AS
+SELECT
+    c.name AS category_name,
+    m.title AS movie_name,
+    m.description AS movie_description,
+    m.release_date,
+    m.duration,
+    m.rating,
+    m.director
+FROM Movies m
+JOIN Categories c ON m.category_id = c.category_id;
+```
+![vw_movies_with_category](imgs/views/vw_movies_with_category.png)
+
+---
+
 ### Funkcje
 
 #### `f_get_client_reservations`
@@ -806,7 +827,7 @@ BEGIN
     reservation_expiry_date_input := reservation_date_input + rental_duration_input;
 
     IF F_USER_HAS_RESERVATION(client_id_input, copy_id_input) THEN
-        -- jeśli użytkownik złożył wcześniej rezerwacji to zmień status w tabeli Reservation
+        -- jeśli użytkownik złożył wcześniej rezerwacje to zmień status w tabeli Reservation
         v_reservation_id := F_GET_RESERVATION_ID(client_id_input, copy_id_input);
         P_CHANGE_RESERVATION_STATUS(v_reservation_id, 'R');
     ELSIF NOT F_IS_COPY_AVAILABLE(copy_id_input) THEN
@@ -820,8 +841,8 @@ BEGIN
 
 
     -- Wstawienie nowego wypożyczenia do tabeli Rental
-    INSERT INTO Rental (client_id, copy_id, out_date, due_date)
-    VALUES (client_id_input, copy_id_input, reservation_date_input, reservation_expiry_date_input);
+    INSERT INTO Rental (client_id, copy_id, out_date, due_date, return_date)
+    VALUES (client_id_input, copy_id_input, reservation_date_input, reservation_expiry_date_input, null);
 
     DBMS_OUTPUT.PUT_LINE('New rental added successfully.');
 EXCEPTION

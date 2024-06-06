@@ -18,13 +18,20 @@ def index():
     views = [
         ('views.VW_MOVIE_POPULARITY', 'Movie Popularity'),
         ('views.VW_CURRENT_RESERVATIONS', 'Current Reservations'),
-        ('views.VW_AVAILABLE_COPIES', 'Available Copies'),
         ('views.VW_ACTOR_RENTALS', 'Actor Rentals'),
-        ('views.filter_movies', 'Movies')
+        ('views.filter_movies', 'Movies'),
+        ('views.VW_MOST_POPULAR_ACTORS_PER_CATEGORY', 'Actors Per Category'),
+        ('views.VW_CLIENTS_DELAYS_SUM', 'Clients Delays Summary'),
+        ('views.VW_CURRENTLY_BORROWED_COPIES', 'Currently Borrowed Copies'),
+        ('views.VW_CURRENTLY_BORROWED_COPIES', 'All Rentals')
+        
     ]
     
     functions = [
-        ('functions.client_reservations', 'Client Reservations')
+        ('views.VW_AVAILABLE_COPIES', 'Available Copies'),
+        ('functions.client_reservations', 'Client Reservations'),
+        ('procedures.rent_movie_form', 'Rent movie'),
+        ('procedures.return_movie_form', 'Return movie')
     ]
 
     links = []

@@ -29,17 +29,11 @@ def connect_to_data_base():
         print("Błąd podczas łączenia z bazą danych:", error)
         return None
 
-def execute_querry(sql: str, parameters: tuple = None, commit: bool = False) -> Union[List[Any], Dict[str, str]]:
+def execute_querry(sql: str) -> Union[List[Any], Dict[str, str]]:
     try:
         cursor = conn.cursor()
-
-        if parameters:
-            cursor.callproc(sql, parameters)
-        else:
-            cursor.execute(sql)
-
-        if commit:
-            conn.commit()
+        
+        cursor.execute(sql)
 
         if cursor.description:
             rows = cursor.fetchall()
@@ -93,5 +87,5 @@ def call_function(func_name: str, args: List[Union[int, str]]) -> Dict[str, Any]
     except cx_Oracle.Error as error:
         if conn:
             conn.rollback()
-        print("Błąd podczas wykonania procedury:", error)
+        print("Błąd podczas wykonania funckji:", error)
         return {'error': str(error)}

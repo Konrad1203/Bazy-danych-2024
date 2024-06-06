@@ -257,17 +257,27 @@ select * from vw_available_copies;
 Widok aktualnie wypożyczonych kopii z informacjami o kliencie, filmie oraz dniami opóźnienia lub 0 gdy nie minął termin zwrotu. Dane posortowane są w kolejności malejącej liczby dni opóźnienia zwrotu.
 
 ```sql
-CREATE OR REPLACE VIEW vw_currently_borrowed_copies
-AS
-    SELECT r.CLIENT_ID, cl.FIRSTNAME || ' ' || cl.LASTNAME as Name,
-        r.COPY_ID, m.TITLE, r.OUT_DATE, r.DUE_DATE,
-       GREATEST(TRUNC(SYSDATE) - TRUNC(r.DUE_DATE), 0) AS Days_of_delay
-    FROM RENTAL r
-    JOIN COPY c on c.COPY_ID = r.COPY_ID
-    JOIN MOVIES m on m.MOVIE_ID = c.MOVIE_ID
-    JOIN CLIENTS cl on cl.CLIENT_ID = r.CLIENT_ID
-    WHERE RETURN_DATE is NULL
-    ORDER BY Days_of_delay DESC;
+CREATE OR REPLACE VIEW vw_currently_borrowed_copies AS
+    SELECT
+        r.CLIENT_ID,
+        cl.FIRSTNAME || ' ' || cl.LASTNAME AS Name,
+        r.COPY_ID,
+        m.TITLE,
+        r.OUT_DATE,
+        r.DUE_DATE,
+        GREATEST(TRUNC(SYSDATE) - TRUNC(r.DUE_DATE), 0) AS Days_of_delay
+    FROM
+        RENTAL r
+    JOIN
+        COPY c ON c.COPY_ID = r.COPY_ID
+    JOIN
+        MOVIES m ON m.MOVIE_ID = c.MOVIE_ID
+    JOIN
+        CLIENTS cl ON cl.CLIENT_ID = r.CLIENT_ID
+    WHERE
+        RETURN_DATE IS NULL
+    ORDER BY
+        Days_of_delay DESC;
 ```
 ```sql
 SELECT * FROM vw_currently_borrowed_copies;
@@ -323,23 +333,32 @@ select * from vw_movie_popularity;
 ---
 
 #### `vw_clients_delays_sum`
+
 Widok pokazujący klientów i ich sumę spóźnień w oddawaniu filmów względem aktualnie wypożyczonych oraz tych już oddanych z opóźnieniem. Wyniki posortowane są od tych klientów z największą liczbą dni.
+
 ```sql
-CREATE OR REPLACE VIEW vw_clients_delays_sum
-AS
-    SELECT
-        cl.CLIENT_ID, cl.FIRSTNAME || ' ' || cl.LASTNAME AS Name,
-        SUM(CASE
-                WHEN r.RETURN_DATE IS NULL THEN
-                    GREATEST(TRUNC(SYSDATE) - TRUNC(r.DUE_DATE), 0)
-                ELSE
-                    GREATEST(TRUNC(r.RETURN_DATE) - TRUNC(r.DUE_DATE), 0)
-            END
-        ) AS Total_days_of_delay
-    FROM RENTAL r
-    JOIN CLIENTS cl ON cl.CLIENT_ID = r.CLIENT_ID
-    GROUP BY cl.CLIENT_ID, cl.FIRSTNAME, cl.LASTNAME
-    ORDER BY Total_days_of_delay DESC;
+CREATE OR REPLACE VIEW vw_clients_delays_sum AS
+SELECT
+    cl.CLIENT_ID,
+    cl.FIRSTNAME || ' ' || cl.LASTNAME AS Name,
+    SUM(
+        CASE
+            WHEN r.RETURN_DATE IS NULL THEN
+                GREATEST(TRUNC(SYSDATE) - TRUNC(r.DUE_DATE), 0)
+            ELSE
+                GREATEST(TRUNC(r.RETURN_DATE) - TRUNC(r.DUE_DATE), 0)
+        END
+    ) AS Total_days_of_delay
+FROM
+    RENTAL r
+JOIN
+    CLIENTS cl ON cl.CLIENT_ID = r.CLIENT_ID
+GROUP BY
+    cl.CLIENT_ID,
+    cl.FIRSTNAME,
+    cl.LASTNAME
+ORDER BY
+    Total_days_of_delay DESC;
 ```
 ```sql
 SELECT * FROM vw_clients_delays_sum;

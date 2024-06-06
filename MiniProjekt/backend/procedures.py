@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, Blueprint, request, render_template, redirect, url_for
+from flask import Flask, Blueprint, request, render_template, redirect, url_for
 from base import execute_querry, call_procedure
 
 app = Flask(__name__)
@@ -41,3 +41,38 @@ def cancel_reservation(reservation_id):
     else:
         return redirect(url_for('functions.client_reservations', client_id=client_id))
 
+
+@procedures_blueprint.route('/rent_movie_form', methods=['GET'])
+def rent_movie_form():
+    return render_template('functions/rent_movie_form.html')
+
+@procedures_blueprint.route('/rental', methods=['POST'])
+def rental():
+    client_id = request.form['client_id']
+    copy_id = request.form['copy_id']
+    rental_duration = request.form['rental_duration']
+
+    result = call_procedure('p_add_new_rental', [int(client_id), int(copy_id), int(rental_duration)])
+    
+    if 'error' in result:
+        return "Error: " + result['error'], 500
+    else:
+        return redirect('http://localhost:5000')
+    
+
+
+@procedures_blueprint.route('/return_movie_form', methods=['GET'])
+def return_movie_form():
+    return render_template('procedures/return_movie_form.html')
+
+
+@procedures_blueprint.route('/return_movie', methods=['POST'])
+def return_movie():
+    rental_id = request.form['rental_id']
+
+    result = call_procedure('P_RETURN_RENTAL', [int(rental_id)])
+    
+    if 'error' in result:
+        return "Error: " + result['error'], 500
+    else:
+        return redirect('http://localhost:5000')

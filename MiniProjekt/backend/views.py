@@ -7,7 +7,7 @@ views_blueprint = Blueprint('views', __name__)
 
 @views_blueprint.route('/VW_MOVIE_POPULARITY')
 def VW_MOVIE_POPULARITY():
-    result = execute_querry("select * from VW_MOVIE_POPULARITY", False)
+    result = execute_querry("select * from VW_MOVIE_POPULARITY")
     if 'error' in result:
         return f"Wystąpił błąd: {result['error']}", 500
     else:
@@ -16,7 +16,7 @@ def VW_MOVIE_POPULARITY():
 
 @views_blueprint.route('/VW_CURRENT_RESERVATIONS')
 def VW_CURRENT_RESERVATIONS():
-    result = execute_querry("select * from VW_CURRENT_RESERVATIONS", False)
+    result = execute_querry("select * from VW_CURRENT_RESERVATIONS")
     if 'error' in result:
         return f"Wystąpił błąd: {result['error']}", 500
     else:
@@ -62,11 +62,47 @@ def get_categories():
 
 @views_blueprint.route('/VW_ACTOR_RENTALS')
 def VW_ACTOR_RENTALS():
-    result = execute_querry("SELECT * FROM vw_actor_rentals", False)
+    result = execute_querry("SELECT * FROM vw_actor_rentals")
     if 'error' in result:
         return f"Wystąpił błąd: {result['error']}", 500
     else:
         return render_template('views/actor_rentals.html', actors=result)
+
+
+@views_blueprint.route('/VW_MOST_POPULAR_ACTORS_PER_CATEGORY')
+def VW_MOST_POPULAR_ACTORS_PER_CATEGORY():
+    result = execute_querry("SELECT * FROM VW_MOST_POPULAR_ACTORS_PER_CATEGORY")
+    if 'error' in result:
+        return f"Wystąpił błąd: {result['error']}", 500
+    else:
+        return render_template('views/most_popular_actor_per_category.html', actors=result)
+
+
+@views_blueprint.route('/VW_CLIENTS_DELAYS_SUM')
+def VW_CLIENTS_DELAYS_SUM():
+    result = execute_querry("SELECT * FROM VW_CLIENTS_DELAYS_SUM")
+    if 'error' in result:
+        return f"Wystąpił błąd: {result['error']}", 500
+    else:
+        return render_template('views/clients_delays_sum.html', clients=result)
+    
+@views_blueprint.route('/VW_CURRENTLY_BORROWED_COPIES')
+def VW_CURRENTLY_BORROWED_COPIES():
+    result = execute_querry("SELECT * FROM VW_CURRENTLY_BORROWED_COPIES")
+    if 'error' in result:
+        return f"Wystąpił błąd: {result['error']}", 500
+    else:
+        return render_template('views/currently_borrowed_copies.html', copies=result)
+
+
+@views_blueprint.route('/VW_ALL_RENTALS')
+def VW_ALL_RENTALS():
+    result = execute_querry("select * from RENTAL")
+
+    if 'error' in result:
+        return f"Wystąpił błąd: {result['error']}", 500
+    else:
+        return render_template('views/all_rental.html', rental=result)
 
 
 

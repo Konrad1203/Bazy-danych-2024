@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Rentals</title>
+    <style>
+        table {
+            width: 70%;
+            border-collapse: collapse;
+            margin: auto;
+        }
+        th, td {
+            border: 1px solid rgb(125, 125, 125);
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            text-align: center;
+        }
+        th {
+            background-color: #d5d5d5;
+        }
+        h2, p {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <br>
+    <a href="../">< Powrót do strony głównej</a>
+
+    {% if display_name == "" %}
+        <h2>Wszystkie dane z {{ table_name }}:</h2>
+    {% else %}
+        <h2>Wszystkie dane z {{ display_name }}:</h2>
+    {% endif %}
+
+    {% if comment != "" %}
+        <p>{{comment}}</p>
+    {% endif %}
+    <br>
+    <table border="1">
+        <thead>
+            <tr>
+                {% for column in column_names %}
+                    <th>{{ column }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+                <tr>
+                    {% for cell in row %}
+                        <td>{{ cell }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Elementy z bazy danych</title>
+</head>
+<body>
+
+    <h2>Lista tabeli w bazie:</h2>
+    <ul>
+        {% for table in tables %}
+            <li><a href="{{ url_for(table[0]) }}">{{ table[1] }}</a></li>
+        {% endfor %}
+    </ul>
+
+    <br>
+
+    <h2>Lista widoków:</h2>
+    <ul>
+        {% for view in views %}
+            <li><a href="{{ url_for(view[0]) }}">{{ view[1] }}</a></li>
+        {% endfor %}
+    </ul>
+    
+    <br>
+
+    <h2>Lista funkcji:</h2>
+    <ul>
+        {% for func in functions %}
+            <li><a href="{{ url_for(func[0], client_id=default_client_id) }}">{{ func[1] }}</a></li>
+        {% endfor %}
+    </ul>
+
+</body>
+</html>

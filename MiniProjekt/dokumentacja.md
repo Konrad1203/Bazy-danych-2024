@@ -113,9 +113,9 @@ ALTER TABLE Rental ADD CONSTRAINT Rental_Clients
 ---
 
 #### `Copy` - tabela fizycznych kopii danego filmu
-- copy_id - id danej kopii
-- movie_id - id jej filmu
-- is_available - czy wypożyczona lub zarezerwowana ("Y", jeśli jest dostępna, "N" jeśli nie)
+- copy_id - id danej kopii,
+- movie_id - id jej filmu,
+- is_available - czy wypożyczona lub zarezerwowana ("Y", jeśli jest dostępna, "N" jeśli nie).
 
 ```sql
 CREATE TABLE Copy (
@@ -133,8 +133,8 @@ ALTER TABLE Copy ADD CONSTRAINT Copy_Movies
 ---
 
 #### `Categories` - tabela kategorii filmów
-- category_id - id kategorii
-- name - nazwa kategorii
+- category_id - id kategorii,
+- name - nazwa kategorii.
   
 ```sql
 CREATE TABLE Categories (
@@ -149,16 +149,16 @@ CREATE TABLE Categories (
 ---
 
 #### `Movies` - tabela zawierająca informacje o filmach
-- movie_id - id filmu
-- name - nazwa filmu
-- title - tytuł filmu
-- category_id - id głównej kategorii filmu
-- release_date - data globalna wydania filmu
-- duration - czas trwania filmu
-- rating - ocena filmu w skali 1 do 10
-- description - krótki opis filmu
-- production_country - kraj produkcji
-- director - imię i nazwisko reżysera
+- movie_id - id filmu,
+- name - nazwa filmu,
+- title - tytuł filmu,
+- category_id - id głównej kategorii filmu,
+- release_date - data globalna wydania filmu,
+- duration - czas trwania filmu,
+- rating - ocena filmu w skali 1 do 10,
+- description - krótki opis filmu,
+- production_country - kraj produkcji,
+- director - imię i nazwisko reżysera.
 
 ```sql
 CREATE TABLE Movies (
@@ -184,9 +184,9 @@ ALTER TABLE Movies ADD CONSTRAINT Movies_Categories
 ---
 
 #### `Actors` - tabela aktorów
-- actor_id - id aktora
-- firstname - imię aktora
-- lastname - nazwisko aktora
+- actor_id - id aktora,
+- firstname - imię aktora,
+- lastname - nazwisko aktora.
 
 ```sql
 CREATE TABLE Actors (
@@ -202,9 +202,9 @@ CREATE TABLE Actors (
 ---
 
 #### `Actors_in_movie` - tabela łącząca aktora z filmem (do relacji wiele do wielu)
-- movie_id - id filmu
-- actor_id - id aktora
-- role - rola aktora w filmie (jaką postać gra)
+- movie_id - id filmu,
+- actor_id - id aktora,
+- role - rola aktora w filmie (jaką postać gra).
 
 ```sql
 CREATE TABLE Actors_in_movie (

@@ -1,7 +1,6 @@
 from flask import Flask, Blueprint, request, render_template, redirect, url_for
 from base import execute_querry, call_procedure
 
-app = Flask(__name__)
 
 procedures_blueprint = Blueprint('procedures', __name__)
 

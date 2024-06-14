@@ -1,9 +1,16 @@
 from flask import Flask, jsonify, Blueprint, request, render_template
 from base import call_function
 
-app = Flask(__name__)
 
 functions_blueprint = Blueprint('functions', __name__)
+
+functions = (
+        ('views.filter_movies', 'Search movies'),
+        ('functions.client_reservations', 'Client Reservations'),
+        ('procedures.rent_movie_form', 'Rent movie'),
+        ('procedures.return_movie_form', 'Return movie'),
+    )
+
 
 @functions_blueprint.route('/client_reservations/<int:client_id>')
 def client_reservations(client_id):

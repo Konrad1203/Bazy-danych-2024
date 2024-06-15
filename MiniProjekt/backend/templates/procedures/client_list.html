@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Client List</title>
+</head>
+<body>
+    <h1>Client List</h1>
+    <ul>
+        {% for client in clients %}
+            <li>
+                {{ client.FIRSTNAME }} {{ client.LASTNAME }} - {{ client.ADDRESS }} - {{ client.PHONE }}
+                <form action="{{ url_for('procedures.delete_client', client_id=client.CLIENT_ID) }}" method="POST" style="display:inline;">
+                    <input type="submit" value="Delete">
+                </form>
+                <a href="{{ url_for('procedures.update_client', client_id=client.CLIENT_ID) }}">Update</a>
+            </li>
+        {% endfor %}
+    </ul>
+    <a href="{{ url_for('procedures.add_client') }}">Add New Client</a>
+</body>
+</html>

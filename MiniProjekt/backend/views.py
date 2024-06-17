@@ -1,5 +1,5 @@
-from flask import Flask, jsonify, Blueprint, request, render_template
-from base import execute_querry, call_procedure, call_function, execute_and_render, get_table_data
+from flask import Blueprint, request, render_template
+from base import execute_and_render, get_table_data, call_function
 
 
 views_blueprint = Blueprint('views', __name__)
@@ -7,7 +7,7 @@ views_blueprint = Blueprint('views', __name__)
 views = (
     ('views.VW_MOVIE_POPULARITY', 'Movie Popularity'),
     ('views.VW_CURRENT_RESERVATIONS', 'Current Reservations'),
-    ('views.VW_AVAILABLE_COPIES', 'Available Copies'),
+    ('views.VW_AVAILABLE_COPIES', 'Available Copies (filtrowanie, rezerwacja)'),
     ('views.VW_ACTOR_RENTALS', 'Actor Rentals'),
     ('views.VW_MOST_POPULAR_ACTORS_PER_CATEGORY', 'Actors Per Category'),
     ('views.VW_CLIENTS_DELAYS_SUM', 'Clients Delays Summary'),
@@ -24,9 +24,31 @@ def VW_CURRENT_RESERVATIONS():
     return get_table_data('VW_CURRENT_RESERVATIONS', display_name='Current Reservations')
     
 
-@views_blueprint.route('/VW_AVAILABLE_COPIES')
+@views_blueprint.route('/VW_AVAILABLE_COPIES', methods=['GET', 'POST'])   # dostępne kopie wyszukiwaniem i funkcją rezerwacji
 def VW_AVAILABLE_COPIES():
-    return execute_and_render("select * from VW_AVAILABLE_COPIES", 'views/available_copies.html', 'copies')
+    if request.method == 'GET':
+        return execute_and_render("select * from VW_AVAILABLE_COPIES", 'views/available_copies.html', 'copies')
+    
+    movie_id = request.form.get('movie_id')
+    movie_name = request.form.get('movie_name')
+    print("Arguments:", movie_id, movie_name)
+
+    if movie_id:
+        print("Movie ID:", movie_id)
+        result = call_function('f_get_available_copies_for_movie_id', [int(movie_id)])
+        print("Result:", result)
+        if 'error' in result:
+            result = []
+        return render_template('views/available_copies.html', copies=result)
+    elif movie_name:
+        print("Movie Name:", movie_name)
+        result = call_function('f_get_available_copies_for_movie_name', [movie_name])
+        print("Result:", result)
+        if 'error' in result:
+            result = []
+        return render_template('views/available_copies.html', copies=result)
+    else:
+        return execute_and_render("select * from VW_AVAILABLE_COPIES", 'views/available_copies.html', 'copies')
 
 
 @views_blueprint.route('/VW_ACTOR_RENTALS')
@@ -51,29 +73,3 @@ def VW_CURRENTLY_BORROWED_COPIES():
     return get_table_data('VW_CURRENTLY_BORROWED_COPIES', 
                           display_name='Currently Borrowed Copies',
                           comment='This view displays all copies that are currently borrowed.')
-
-
-@views_blueprint.route('/filter_movies', methods=['GET', 'POST'])
-def filter_movies():
-    if request.method == 'POST':
-        category_id = request.form['category_id']
-        result = call_function('f_get_movies_by_category', [int(category_id)])
-        
-        if 'error' in result:
-            return f"Error: {result['error']}", 500
-        else:
-            movies = result
-    else:
-        movies = get_all_movies()
-
-    return render_template('views/movie_filter_form.html', categories=get_categories(), movies=movies)
-
-def get_all_movies():
-    query = "SELECT * FROM vw_movies_with_category"
-    movies = execute_querry(query)
-    return movies
-
-def get_categories():
-    query = "SELECT category_id, name FROM Categories"
-    categories = execute_querry(query)
-    return categories

@@ -7,11 +7,22 @@
 </head>
 <body>
     <h1>Available Copies</h1>
+    <form method="post">
+        <label for="movie_id">Movie ID:</label>
+        <input type="text" id="movie_id" name="movie_id">
+        <br>
+        <label for="movie_name">Movie Name:</label>
+        <input type="text" id="movie_name" name="movie_name">
+        <br>
+        <button type="submit">Search</button>
+        <button type="button" onclick="window.location.href='/VW_AVAILABLE_COPIES'">Reset</button>
+    </form>
     <table>
         <tr>
-            <th>Copy ID</th>
             <th>Movie ID</th>
-            <th>Status</th>
+            <th>Copy ID</th>
+            <th>Movie title</th>
+            <th>Category</th>
             <th>Release Date</th>
             <th>Duration</th>
             <th>Action</th>
@@ -21,11 +32,12 @@
             <td>{{ copy[0] }}</td>
             <td>{{ copy[1] }}</td>
             <td>{{ copy[2] }}</td>
-            <td>{{ copy[3].strftime('%Y-%m-%d') }}</td>
-            <td>{{ copy[4] }}</td>
+            <td>{{ copy[3] }}</td>
+            <td>{{ copy[4].strftime('%Y-%m-%d') }}</td>
+            <td>{{ copy[5] }}</td>
             <td>
                 <form action="/reserve" method="post">
-                    <input type="hidden" name="copy_id" value="{{ copy[0] }}">
+                    <input type="hidden" name="copy_id" value="{{ copy[1] }}">
                     <input type="submit" value="Reserve">
                 </form>
             </td>

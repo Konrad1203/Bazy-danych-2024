@@ -229,21 +229,17 @@ ALTER TABLE Actors_in_movie ADD CONSTRAINT Actors_in_movie_Movies
 
 #### `vw_available_copies`
 
-Widok dostępnych kopii filmów wyświetla listę dostępnych kopii filmów wraz z ich szczegółami, takimi jak tytuł filmu, kategoria, data wydania, dostępność itp.
+Widok dostępnych kopii filmów wyświetla listę dostępnych kopii filmów wraz z ich szczegółami, takimi jak tytuł filmu, kategoria, data wydania itp.
 
 ```sql
-CREATE OR REPLACE VIEW vw_available_copies AS
-SELECT
-    c.copy_id,
-    m.title AS movie_title,
-    cat.name AS category_name,
-    m.release_date,
-    m.duration,
-    c.is_available
-FROM Copy c
-JOIN Movies m ON c.movie_id = m.movie_id
-JOIN Categories cat ON m.category_id = cat.category_id
-WHERE c.is_available = 'Y';
+create or replace view VW_AVAILABLE_COPIES
+AS
+    SELECT m.MOVIE_ID, c.COPY_ID, m.TITLE,
+    cat.NAME AS category_name, m.RELEASE_DATE, m.DURATION
+    FROM Copy c
+    JOIN Movies m ON c.movie_id = m.movie_id
+    JOIN Categories cat ON m.category_id = cat.category_id
+    WHERE c.is_available = 'Y'
 ```
 ```sql
 select * from vw_available_copies;
@@ -419,7 +415,7 @@ SELECT * FROM vw_most_popular_actors_per_category;
 
 ---
 
-#### VW_MOVIES_WITH_CATEGORY
+#### `vw_movies_with_category`
 
 Widok wyświetla informacje o wszystkich filmach, które należą do wypożyczalni.
 
@@ -718,6 +714,74 @@ END;
 ```
 Użycie:
 ![f_get_reservation_id](imgs/functions/f_get_reservation_id.png)
+
+---
+
+#### `f_get_available_copies_for_movie_id`
+
+Funkcja zwraca listę wszystkich wolnych kopii filmu o podanym id.
+```sql
+create or replace FUNCTION f_get_available_copies_for_movie_id(movie_id_input INT)
+RETURN SYS_REFCURSOR
+IS
+    is_movie INT;
+    movies_cursor SYS_REFCURSOR;
+BEGIN
+    -- Sprawdzamy czy istnieje taki film w systemie
+    SELECT count(*) INTO is_movie FROM MOVIES
+    WHERE MOVIE_ID = movie_id_input;
+    IF is_movie < 1 THEN
+        RAISE_APPLICATION_ERROR(-20000, 'Nie ma takiego filmu');
+    END IF;
+
+    OPEN movies_cursor FOR
+        SELECT *
+        FROM VW_AVAILABLE_COPIES c
+        WHERE c.MOVIE_ID = movie_id_input;
+
+    RETURN movies_cursor;
+END;
+```
+```sql
+select f_get_available_copies_for_movie_id(5) from dual;
+```
+![f_get_available_copies_for_movie_id](imgs/functions/f_get_available_copies_for_movie_id.png)
+
+![f_get_available_copies_for_movie_id2](imgs/functions/f_get_available_copies_for_movie_id2.png)
+
+---
+
+#### `f_get_available_copies_for_movie_name`
+
+Funkcja zwraca listę wszystkich wolnych kopii filmu o podobnej nazwie.
+```sql
+create or replace FUNCTION f_get_available_copies_for_movie_name(movie_name_input VARCHAR2)
+RETURN SYS_REFCURSOR
+IS
+    is_movie INT;
+    movies_cursor SYS_REFCURSOR;
+BEGIN
+    -- Sprawdzamy czy istnieje taki film w systemie (ignorując wielkość liter)
+    SELECT count(*) INTO is_movie FROM MOVIES
+    WHERE UPPER(TITLE) LIKE '%' || UPPER(movie_name_input) || '%';
+    IF is_movie < 1 THEN
+        RAISE_APPLICATION_ERROR(-20000, 'Nie ma takiego filmu o podobnym tytule');
+    END IF;
+
+    OPEN movies_cursor FOR
+        SELECT *
+        FROM VW_AVAILABLE_COPIES c
+        WHERE UPPER(c.TITLE) LIKE '%' || UPPER(movie_name_input) || '%';
+
+    RETURN movies_cursor;
+END;
+```
+```sql
+select F_GET_AVAILABLE_COPIES_FOR_MOVIE_NAME('piraci') from dual;
+```
+![f_get_available_copies_for_movie_name](imgs/functions/f_get_available_copies_for_movie_name.png)
+
+![f_get_available_copies_for_movie_name](imgs/functions/f_get_available_copies_for_movie_name2.png)
 
 ---
 
@@ -1287,17 +1351,33 @@ def execute_querry(sql):
 ### Główna aplikacja
 
 ```python
-from flask import Flask
+from flask import Flask, render_template
 from base import connect_to_data_base
-from views import views_blueprint
+from tables import tables, tables_blueprint
+from views import views, views_blueprint
+from procedures import procedures_blueprint
+from functions import functions, functions_blueprint
 
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
 
 conn = connect_to_data_base()
+app.register_blueprint(tables_blueprint)
 app.register_blueprint(views_blueprint)
+app.register_blueprint(procedures_blueprint)
+app.register_blueprint(functions_blueprint)
+
+# http://localhost:5000
+@app.route('/')
+def index():
+    return render_template(
+            'main.html',
+            tables=tables,
+            views=views,
+            functions=functions,
+            default_client_id=1   # Domyślnie wyświetlany klient
+            )
 
 if __name__ == '__main__':
     app.run(debug=True)
-
 ```

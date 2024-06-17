@@ -1,4 +1,4 @@
-from flask import Flask, url_for, render_template
+from flask import Flask, render_template
 from base import connect_to_data_base
 from tables import tables, tables_blueprint
 from views import views, views_blueprint

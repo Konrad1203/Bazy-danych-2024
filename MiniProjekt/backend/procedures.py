@@ -76,54 +76,64 @@ def return_movie():
     else:
         return redirect('http://localhost:5000')
 
-@procedures_blueprint.route('/add_client', methods=['GET', 'POST'])
-def add_client():
-    if request.method == 'POST':
-        firstname = request.form['firstname']
-        lastname = request.form['lastname']
-        address = request.form['address']
-        phone = request.form['phone']
-        
-        result = call_procedure('p_add_client', [firstname, lastname, address, phone])
-        
-        if 'error' in result:
-            return "Error: " + result['error'], 500
-        else:
-            return redirect('http://localhost:5000')
+@procedures_blueprint.route('/add_client_form', methods=['GET'])
+def add_client_form():
     return render_template('procedures/add_client_form.html')
 
-@procedures_blueprint.route('/delete_client/<int:client_id>', methods=['POST'])
-def delete_client(client_id):
-    result = call_procedure('p_delete_client', [client_id])
+@procedures_blueprint.route('/add_client', methods=['POST'])
+def add_client():
+    firstname = request.form['firstname']
+    lastname = request.form['lastname']
+    address = request.form['address']
+    phone = request.form['phone']
+
+    result = call_procedure('p_add_client', [firstname, lastname, address, phone])
     
     if 'error' in result:
         return "Error: " + result['error'], 500
     else:
-        return redirect('http://localhost:5000')
+        return redirect(url_for('index'))
 
-@procedures_blueprint.route('/update_client/<int:client_id>', methods=['GET', 'POST'])
-def update_client(client_id):
-    if request.method == 'POST':
-        firstname = request.form['firstname']
-        lastname = request.form['lastname']
-        address = request.form['address']
-        phone = request.form['phone']
-        
-        result = call_procedure('p_update_client', [client_id, firstname, lastname, address, phone])
-        
-        if 'error' in result:
-            return "Error: " + result['error'], 500
-        else:
-            return redirect('http://localhost:5000')
+@procedures_blueprint.route('/delete_client_form', methods=['GET'])
+def delete_client_form():
+    return render_template('procedures/delete_client_form.html')
+
+@procedures_blueprint.route('/delete_client', methods=['POST'])
+def delete_client():
+    client_id = request.form['client_id']
+
+    result = call_procedure('p_delete_client', [int(client_id)])
     
-    client_data = execute_query('SELECT * FROM CLIENTS WHERE CLIENT_ID = :client_id', {'client_id': client_id})
-    if client_data:
-        client = client_data[0]
-        return render_template('procedures/update_client_form.html', client=client)
+    if 'error' in result:
+        return "Error: " + result['error'], 500
     else:
-        return "Client not found", 404
+        return redirect(url_for('index'))
 
-@procedures_blueprint.route('/client_list', methods=['GET'])
-def client_list():
-    clients = execute_query('SELECT * FROM CLIENTS')
-    return render_template('procedures/client_list.html', clients=clients)
+@procedures_blueprint.route('/update_client_form', methods=['GET'])
+def update_client_form():
+    return render_template('procedures/update_client_form.html')
+
+@procedures_blueprint.route('/update_client', methods=['POST'])
+def update_client():
+    client_id = request.form['client_id']
+    firstname = request.form['firstname']
+    lastname = request.form['lastname']
+    address = request.form['address']
+    phone = request.form['phone']
+
+    result = call_procedure('p_update_client', [int(client_id), firstname, lastname, address, phone])
+    
+    if 'error' in result:
+        return "Error: " + result['error'], 500
+    else:
+        return redirect(url_for('index'))
+
+@procedures_blueprint.route('/list_clients', methods=['GET'])
+def list_clients():
+    result = call_procedure('p_get_all_clients', [])
+    
+    if 'error' in result:
+        return "Error: " + result['error'], 500
+    else:
+        clients = result['data']
+        return render_template('procedures/list_clients.html', clients=clients)

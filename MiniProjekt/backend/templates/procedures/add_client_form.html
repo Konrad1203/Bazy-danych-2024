@@ -1,22 +1,23 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="pl">
 <head>
+    <meta charset="UTF-8">
     <title>Add Client</title>
 </head>
 <body>
-    <h1>Add New Client</h1>
-    <form action="{{ url_for('procedures.add_client') }}" method="POST">
+    <h1>Add a New Client</h1>
+    <form action="{{ url_for('procedures.add_client') }}" method="post">
         <label for="firstname">First Name:</label>
-        <input type="text" id="firstname" name="firstname"><br>
+        <input type="text" id="firstname" name="firstname" required><br>
 
         <label for="lastname">Last Name:</label>
-        <input type="text" id="lastname" name="lastname"><br>
+        <input type="text" id="lastname" name="lastname" required><br>
 
         <label for="address">Address:</label>
-        <input type="text" id="address" name="address"><br>
+        <input type="text" id="address" name="address" required><br>
 
         <label for="phone">Phone:</label>
-        <input type="text" id="phone" name="phone"><br>
+        <input type="text" id="phone" name="phone" required><br>
 
         <input type="submit" value="Add Client">
     </form>

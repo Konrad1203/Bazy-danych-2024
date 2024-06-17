@@ -1,22 +1,26 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="pl">
 <head>
+    <meta charset="UTF-8">
     <title>Update Client</title>
 </head>
 <body>
     <h1>Update Client</h1>
-    <form action="{{ url_for('procedures.update_client', client_id=client.CLIENT_ID) }}" method="POST">
+    <form action="{{ url_for('procedures.update_client') }}" method="post">
+        <label for="client_id">Client ID:</label>
+        <input type="text" id="client_id" name="client_id" required><br>
+
         <label for="firstname">First Name:</label>
-        <input type="text" id="firstname" name="firstname" value="{{ client.FIRSTNAME }}"><br>
+        <input type="text" id="firstname" name="firstname" required><br>
 
         <label for="lastname">Last Name:</label>
-        <input type="text" id="lastname" name="lastname" value="{{ client.LASTNAME }}"><br>
+        <input type="text" id="lastname" name="lastname" required><br>
 
         <label for="address">Address:</label>
-        <input type="text" id="address" name="address" value="{{ client.ADDRESS }}"><br>
+        <input type="text" id="address" name="address" required><br>
 
         <label for="phone">Phone:</label>
-        <input type="text" id="phone" name="phone" value="{{ client.PHONE }}"><br>
+        <input type="text" id="phone" name="phone" required><br>
 
         <input type="submit" value="Update Client">
     </form>

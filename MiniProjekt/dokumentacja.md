@@ -982,12 +982,20 @@ END;
 ```
 
 Użycie: 
+
+Przed: 
+
+![p_remove_rental](imgs/procedures/p_remove_rental-1.png)
+
+![p_remove_rental](imgs/procedures/p_remove_rental-3.png)
+
 ```sql
 begin
-    p_return_rental(20);
+    p_return_rental(6);
 end;
 ```
-Kopia o copy_id = 2 jest teraz dostępna:
+Kopia o copy_id = 37 jest teraz dostępna:
+
 ![p_remove_rental](imgs/procedures/p_remove_rental.png)
 
 I oczywiście uzupełnia się wtedy pole `RETURN_DATE`.
@@ -1033,11 +1041,13 @@ BEGIN
 END;
 ```
 W ten sposób można z niej skorzystać:
+
 ```sql
 BEGIN
     update_copy_availability();
 END;
 ```
+
 #### `p_add_client`
 
 Procedura P_ADD_CLIENT dodaje nowego klienta do tabeli `CLIENTS` z podanymi danymi: imieniem, nazwiskiem, adresem i numerem telefonu. Jeśli podczas dodawania klienta wystąpi błąd, procedura zgłasza komunikat.
@@ -1059,13 +1069,17 @@ BEGIN
     END;
 END p_add_client;
 ```
+
 Przykład użycia:
+
 ```sql
 BEGIN
     p_add_client('Jan', 'Krakowski', 'Warszawa, ul. Krakowskie Przedmieście 1', '123456789');
 END;
 ```
+
 Rezultat - nowy klient został dodany:
+
 ![alt text](imgs/procedures/p_add_client.png)
 
 #### `p_delete_client`
@@ -1099,11 +1113,17 @@ BEGIN
     P_DELETE_CLIENT(61); -- Jan Kowalski
 END;
 ```
+
+Klient został usunięty
+
+![alt text](imgs/procedures/p_delete_client.png)
+
 ```sql
 BEGIN
     P_DELETE_CLIENT(62); -- Nie ma takiego klienta
 END;
 ```
+
 ![alt text](imgs/procedures/p_delete_error.png)
 
 #### `p_update_client`
@@ -1136,20 +1156,28 @@ BEGIN
     END;
 END P_UPDATE_CLIENT;
 ```
+
 Wykorzystanie procedury:
 ```sql
 BEGIN
     p_update_client(1, 'Janusz', 'Kowalski', 'Kraków, ul. Floriańska 2', '987654321');
 END;
 ```
+
+I dane klienta o Id = 1 zostały zaaktualizowane
+
+![alt text](imgs/procedures/p_update.png)
+
 ```sql
 BEGIN
     p_update_client(100, 'Dariusz', 'Michalski', 'Kraków, ul. Floriańska 2', '987654321'); -- Nie ma takiego klienta
 END;
 ```
-![alt text](imgs/procedures/p_delete_error.png)
+
+![alt text](imgs/procedures/p_update_error.png)
 
 ---
+
 ### Triggery
 
 #### `t_copy_check_available`

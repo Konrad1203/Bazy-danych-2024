@@ -3,20 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <title>Rent a Movie</title>
 </head>
 <body>
-    <h1>Rent a Movie</h1>
-    <form action="/rental" method="post">
-        <label for="client_id">Client ID:</label>
-        <input type="text" id="client_id" name="client_id" required><br>
-    
-        <label for="copy_id">Copy ID:</label>
-        <input type="text" id="copy_id" name="copy_id" required><br>
-    
-        <label for="rental_duration">Rental Duration (days):</label>
-        <input type="text" id="rental_duration" name="rental_duration" value="14" required><br>
-    
-        <input type="submit" value="Submit Rental">
-    </form>
+    <div class="container mt-5">
+        <h1>Rent a Movie</h1>
+        <form action="/rental" method="post">
+            <div class="form-group">
+                <label for="client_id">Client ID:</label>
+                <input type="text" class="form-control" id="client_id" name="client_id" required>
+            </div>
+            <div class="form-group">
+                <label for="copy_id">Copy ID:</label>
+                <input type="text" class="form-control" id="copy_id" name="copy_id" required>
+            </div>
+            <div class="form-group">
+                <label for="rental_duration">Rental Duration (days):</label>
+                <input type="text" class="form-control" id="rental_duration" name="rental_duration" value="14" required>
+            </div>
+            <button type="submit" class="btn btn-secondary">Submit Rental</button> <!-- Szary przycisk -->
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
 </html>

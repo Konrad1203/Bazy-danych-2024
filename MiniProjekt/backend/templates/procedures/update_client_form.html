@@ -2,27 +2,41 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <title>Update Client</title>
 </head>
 <body>
-    <h1>Update Client</h1>
-    <form action="{{ url_for('procedures.update_client') }}" method="post">
-        <label for="client_id">Client ID:</label>
-        <input type="text" id="client_id" name="client_id" required><br>
+    <a href="../">< Powrót do strony głównej</a>
+    <div class="container mt-5">
+        <h1 class="mb-4">Update Client</h1>
+        <form action="{{ url_for('procedures.update_client') }}" method="post">
+            <div class="form-group">
+                <label for="client_id">Client ID:</label>
+                <input type="text" class="form-control" id="client_id" name="client_id" required>
+            </div>
+            <div class="form-group">
+                <label for="firstname">First Name:</label>
+                <input type="text" class="form-control" id="firstname" name="firstname" required>
+            </div>
+            <div class="form-group">
+                <label for="lastname">Last Name:</label>
+                <input type="text" class="form-control" id="lastname" name="lastname" required>
+            </div>
+            <div class="form-group">
+                <label for="address">Address:</label>
+                <input type="text" class="form-control" id="address" name="address" required>
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone:</label>
+                <input type="text" class="form-control" id="phone" name="phone" required>
+            </div>
+            <button type="submit" class="btn btn-secondary">Update Client</button> <!-- Szary przycisk -->
+        </form>
+    </div>
 
-        <label for="firstname">First Name:</label>
-        <input type="text" id="firstname" name="firstname" required><br>
-
-        <label for="lastname">Last Name:</label>
-        <input type="text" id="lastname" name="lastname" required><br>
-
-        <label for="address">Address:</label>
-        <input type="text" id="address" name="address" required><br>
-
-        <label for="phone">Phone:</label>
-        <input type="text" id="phone" name="phone" required><br>
-
-        <input type="submit" value="Update Client">
-    </form>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

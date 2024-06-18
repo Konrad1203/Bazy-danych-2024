@@ -3,15 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <title>Return Movie Form</title>
 </head>
 <body>
-    <h1>Return Movie Form</h1>
-    <form action="/return_movie" method="post">
-        <label for="rental_id">Rental ID:</label>
-        <input type="text" id="rental_id" name="rental_id" required><br><br>
-        
-        <input type="submit" value="Return Movie">
-    </form>
+    <a href="../">< Powrót do strony głównej</a>
+    <div class="container mt-5">
+        <h1>Return Movie Form</h1>
+        <form action="/return_movie" method="post">
+            <div class="form-group">
+                <label for="rental_id">Rental ID:</label>
+                <input type="text" class="form-control" id="rental_id" name="rental_id" required>
+            </div>
+            <button type="submit" class="btn btn-secondary">Return Movie</button> <!-- Szary przycisk -->
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

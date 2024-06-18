@@ -2,15 +2,25 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <title>Delete Client</title>
 </head>
 <body>
-    <h1>Delete Client</h1>
-    <form action="{{ url_for('procedures.delete_client') }}" method="post">
-        <label for="client_id">Client ID:</label>
-        <input type="text" id="client_id" name="client_id" required><br>
+    <div class="container mt-5">
+        <a href="../">< Powrót do strony głównej</a>
+        <h1 class="mb-4">Delete Client</h1>
+        <form action="{{ url_for('procedures.delete_client') }}" method="post">
+            <div class="form-group">
+                <label for="client_id">Client ID:</label>
+                <input type="text" class="form-control" id="client_id" name="client_id" required>
+            </div>
+            <button type="submit" class="btn btn-secondary">Delete Client</button> <!-- Szary przycisk -->
+        </form>
+    </div>
 
-        <input type="submit" value="Delete Client">
-    </form>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 from flask import Blueprint, request, render_template, redirect, url_for
-from base import execute_query, call_procedure
+from base import call_procedure, get_table_data
 
 
 procedures_blueprint = Blueprint('procedures', __name__)
@@ -127,13 +127,3 @@ def update_client():
         return "Error: " + result['error'], 500
     else:
         return redirect(url_for('index'))
-
-@procedures_blueprint.route('/list_clients', methods=['GET'])
-def list_clients():
-    result = call_procedure('p_get_all_clients', [])
-    
-    if 'error' in result:
-        return "Error: " + result['error'], 500
-    else:
-        clients = result['data']
-        return render_template('procedures/list_clients.html', clients=clients)

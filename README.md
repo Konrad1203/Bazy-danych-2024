@@ -2,6 +2,9 @@
 
 Dokumentacja projektu w katalogu `Miniprojekt/dokumentacja.md`
 
+0) Link do folderu z naszym projektem
+   Github: https://github.com/Konrad1203/Bazy-danych-2024/tree/main/MiniProjekt
+
 1) Skład grupy  
    Tomasz Furgała: furgalat@student.agh.edu.pl  
    Konrad Tendaj: konradtendaj@student.agh.edu.pl  

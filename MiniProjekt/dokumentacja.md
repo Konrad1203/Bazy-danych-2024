@@ -979,110 +979,16 @@ END;
 Użycie: 
 ```sql
 begin
-    p_return_rental(21);
+    p_return_rental(20);
 end;
 ```
 Kopia o copy_id = 2 jest teraz dostępna:
 ![p_remove_rental](imgs/procedures/p_remove_rental.png)
 
-I oczywiście uzupełniło się pole RETURN_DATE.
+I oczywiście uzupełnia się wtedy pole `RETURN_DATE`.
 
----
+![p_remove_rental](imgs/procedures/p_remove_rental-2.png)
 
-#### `p_process_rental`
-
-Prodecura wywołująca procedurę odpowiedzialną za wypożyczenie 
-
-```sql
-CREATE OR REPLACE PROCEDURE p_process_rental (
-    client_id_input INT,
-    copy_id_input INT,
-    rental_duration_input INT
-)
-IS
-BEGIN
-    -- Dodanie nowego wypożyczenia
-    p_add_new_rental(client_id_input, copy_id_input, rental_duration_input);
-
-    -- Zatwierdzenie zmian
-    COMMIT;
-EXCEPTION
-    WHEN OTHERS THEN
-        -- Wycofanie transakcji w przypadku błędu
-        ROLLBACK;
-END;
-```
---- 
-
-#### `p_process_reservation`
-
-Tak jak poprzednio, procedura odpowiada w wywołanie procedury dodania nowej rezerwacji i zatwierdzenia zmian.
-
-```sql
-CREATE OR REPLACE PROCEDURE p_process_reservation (
-    client_id_input INT,
-    copy_id_input INT,
-    rental_duration_input INT
-)
-IS
-BEGIN
-    -- Dodanie nowej rezerwacji
-    P_ADD_RESERVATION(client_id_input, copy_id_input, rental_duration_input);
-
-    -- Zatwierdzenie zmian
-    COMMIT;
-EXCEPTION
-    WHEN OTHERS THEN
-        -- Wycofanie transakcji w przypadku błędu
-        ROLLBACK;
-END;
-```
----
-
-#### `p_process_change_reservation_status`
-
-Procedura odpowiada za wyłanie procedury do zmiany statusu rezerwacji i zatwierdzenia zmian. W przypadku błędu wywołuje komendą `Rollback`.
-```sql
-CREATE OR REPLACE PROCEDURE p_process_change_reservation_status (
-    reservation_id_input INT,
-    status_input Char
-)
-IS
-BEGIN
-    -- Zmiana statusu rezerwacji
-    p_change_reservation_status(reservation_id_input, status_input);
-
-    -- Zatwierdzenie zmian
-    COMMIT;
-EXCEPTION
-    WHEN OTHERS THEN
-        -- Wycofanie transakcji w przypadku błędu
-        ROLLBACK;
-END;
-```
----
-
-#### `p_process_rental_return`
-
-Procedura odpowiada za wywołanie procedury do usuwania istniejących wypożyczeń i zatwierdzania zmian w bazie danych.
-
-```sql
-CREATE OR REPLACE PROCEDURE p_process_rental_return (
-    rental_id_input INT
-)
-IS
-BEGIN
-    -- Zwrócenie kopii filmu
-    p_return_rental(rental_id_input);
-
-    -- Zatwierdzenie zmian
-    COMMIT;
-EXCEPTION
-    WHEN OTHERS THEN
-        -- Wycofanie transakcji w przypadku błędu
-        ROLLBACK;
-END;
-```
 ---
 #### `update_copy_availability`
 Procedura odpowiedzialna za aktualizację pola `IS_AVAILABLE` w tabeli `Copy` w przypadku, gdy występują pewne nieprawidłowości. Sprawdzamy czy dana kopia jest zarezerwowana lub wypożyczona. Jeśli tak to poprawiamy pole na `Y`. Jeśli nie to ustawiamy na `N`.
@@ -1325,29 +1231,6 @@ def connect_to_data_base():
         return None
 ```
 
-### Wykonywanie poleceń:
-
-Funkcja odpowiedzialna za wykonywanie poleceń w bazie danych.
-
-```python
-def execute_querry(sql):
-    global conn
-    try:
-        cursor = conn.cursor()
-
-        cursor.execute(sql)
-
-        rows = cursor.fetchall()
-
-        cursor.close()
-
-        return rows
-
-    except cx_Oracle.Error as error:
-        print("Błąd podczas wykonania zapytania:", error)
-        return {'error': str(error)}
-```
-
 ### Główna aplikacja
 
 ```python
@@ -1381,3 +1264,634 @@ def index():
 if __name__ == '__main__':
     app.run(debug=True)
 ```
+
+### Wykonywanie poleceń:
+
+Funkcja `execute_querry` wykonuje podane zapytanie SQL do bazy danych przy użyciu biblioteki cx_Oracle. Zwraca listę wyników zapytania lub słownik z komunikatem błędu, obsługując również możliwość cofnięcia transakcji w przypadku wystąpienia problemu.
+
+```python
+def execute_querry(sql: str) -> list[any] | dict[str, str]:
+    if conn is None:
+        return {'error': 'Błąd podczas łączenia z bazą danych'}
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        rows = cursor.fetchall() if cursor.description else []
+        cursor.close()
+        return rows
+
+    except cx_Oracle.Error as error:
+        if conn:
+            conn.rollback()
+        print("Błąd podczas wykonania zapytania:", error)
+        return {'error': str(error)}
+```
+
+
+Funkcja `call_function` wykonuje wywołanie funkcji przechowywanej w bazie danych Oracle, przekazując jej argumenty, a następnie zwraca wynik jako listę wierszy wynikowych. Obsługuje również błędy związane z połączeniem z bazą danych i wyjątki z biblioteki cx_Oracle, umożliwiając roll-back transakcji w przypadku wystąpienia problemu.
+
+```python
+def call_function(func_name: str, args: list[int | str]) -> dict[str, any]:
+    if conn is None:
+        return {'error': 'Błąd podczas łączenia z bazą danych'}
+
+    try:
+        cursor = conn.cursor()
+        result_cursor = cursor.var(cx_Oracle.CURSOR)
+        cursor.callfunc(func_name, result_cursor, args)
+        result_cursor = result_cursor.getvalue()
+        rows = result_cursor.fetchall() if result_cursor else []
+        cursor.close()
+        return rows
+    except cx_Oracle.Error as error:
+        if conn:
+            conn.rollback()
+        print("Błąd podczas wykonania funckji:", error)
+        return {'error': str(error)}
+```
+
+Funkcja `call_procedure` wykonuje procedurę przechowywaną w bazie danych Oracle, przekazując jej argumenty i zatwierdzając zmiany w bazie danych po jej wykonaniu. Obsługuje błędy związane z połączeniem z bazą danych oraz wyjątki z biblioteki cx_Oracle, umożliwiając roll-back transakcji w przypadku wystąpienia problemu podczas wykonywania procedury. Funkcja zwraca komunikat o pomyślnym wykonaniu procedury lub informację o błędzie.
+
+```python
+def call_procedure(proc_name: str, args: list[int | str]) -> dict[str, any]:
+    if conn is None:
+        return {'error': 'Błąd podczas łączenia z bazą danych'}
+
+    try:
+        cursor = conn.cursor()
+        cursor.callproc(proc_name, args)
+        conn.commit()
+        cursor.close()
+        return {'message': f'Procedure {proc_name} executed successfully'}
+    except cx_Oracle.Error as error:
+        if conn:
+            conn.rollback()
+        print("Błąd podczas wykonania procedury:", error)
+        return {'error': str(error)}
+```
+
+Funkcja `get_table_data` pobiera nazwy kolumn oraz dane z określonej tabeli w bazie danych, a następnie renderuje je w szablonie HTML. Parametry opcjonalne display_name i comment służą do dodatkowego dostosowania wyglądu wyrenderowanej tabeli.
+
+```python
+def get_table_data(table_name: str, display_name: str = "", comment: str = "") -> str:
+    column_names_packed = execute_querry(
+        f"SELECT column_name FROM USER_TAB_COLUMNS WHERE table_name = '{table_name.upper()}'"
+    )
+    column_names = [item for sublist in column_names_packed for item in sublist]
+    data = execute_querry(f"SELECT * FROM {table_name}")
+    return render_template('table.html',
+                           table_name=table_name,
+                           column_names=column_names,
+                           data=data,
+                           comment=comment,
+                           display_name=display_name,
+                           )
+```
+
+
+Funkcja `execute_and_render` wykonuje podane zapytanie do bazy danych za pomocą funkcji `execute_querry`, a następnie renderuje wynikowy szablon HTML przy użyciu `render_template`. Jeśli wykonanie zapytania zakończy się błędem, funkcja zwraca komunikat o błędzie. W przeciwnym razie zwraca szablon HTML z danymi zapytania, które są przekazane pod nazwą określoną przez parametr `value_name`.
+
+```python
+def execute_and_render(query: str, template_url: str, value_name: str = 'data') -> str:
+    result = execute_querry(query)
+    if 'error' in result:
+        return f"Wystąpił błąd: {result['error']}", 500
+    else:
+        return render_template(template_url, **{value_name: result})
+```
+
+### Uruchomienie
+
+Po uruchomieniu pliku `main.py`(zawartość jest pokazana wyżej) i wpisaniu w przegldądarce `http://localhost:5000` pokazuje się wybór możliwych endpointów.
+
+![menu_start](imgs/backend/menu.png)
+
+Szablon strony internetowej, który wyświetla naszą stronę startową:
+
+```html
+<!doctype html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Elementy z bazy danych</title>
+</head>
+<body>
+
+    <h2>Lista tabeli w bazie:</h2>
+    <ul>
+        {% for table in tables %}
+            <li><a href="{{ url_for(table[0]) }}">{{ table[1] }}</a></li>
+        {% endfor %}
+    </ul>
+
+    <br>
+
+    <h2>Lista widoków:</h2>
+    <ul>
+        {% for view in views %}
+            <li><a href="{{ url_for(view[0]) }}">{{ view[1] }}</a></li>
+        {% endfor %}
+    </ul>
+    
+    <br>
+
+    <h2>Lista funkcji:</h2>
+    <ul>
+        {% for func in functions %}
+            <li><a href="{{ url_for(func[0], client_id=default_client_id) }}">{{ func[1] }}</a></li>
+        {% endfor %}
+    </ul>
+    
+    <h2>Client Management</h2>
+    <ul>
+        <li><a href="{{ url_for('procedures.add_client_form') }}">Add Client</a></li>
+        <li><a href="{{ url_for('procedures.delete_client_form') }}">Delete Client</a></li>
+        <li><a href="{{ url_for('procedures.update_client_form') }}">Update Client</a></li>
+        <li><a href="{{ url_for('tables.get_Clients') }}">List Clients</a></li>
+    </ul>
+    
+
+</body>
+</html>
+```
+
+### Tabele
+
+Do wyświetlania tebal stworzyliśmy osobny plik `tables.py`, który zawiera endpoint to funkcji, które następnie wywołują funckje `get_table_data()` odpowiedzialną za render odpowiedniej tabeli.
+
+```python
+from flask import Blueprint
+from base import get_table_data
+
+
+tables_blueprint = Blueprint('tables', __name__)
+
+tables = (
+    ('tables.get_Clients', 'Clients'),
+    ('tables.get_Reservation', 'Reservation'),
+    ('tables.get_Rental', 'Rental'),
+    ('tables.get_Copy', 'Copy'),
+    ('tables.get_Categories', 'Categories'),
+    ('tables.get_Movies', 'Movies'),
+    ('tables.get_Actors', 'Actors'),
+    ('tables.get_Actors_in_movie', 'Actors_in_movie'),
+)
+
+
+@tables_blueprint.route('/tables/Clients')
+def get_Clients():
+    return get_table_data('Clients')
+
+@tables_blueprint.route('/tables/Reservation')
+def get_Reservation():
+    return get_table_data('Reservation')
+
+@tables_blueprint.route('/tables/Rental')
+def get_Rental():
+    return get_table_data('Rental')
+
+@tables_blueprint.route('/tables/Copy')
+def get_Copy():
+    return get_table_data('Copy')
+
+@tables_blueprint.route('/tables/Categories')
+def get_Categories():
+    return get_table_data('Categories')
+
+@tables_blueprint.route('/tables/Movies')
+def get_Movies():
+    return get_table_data('Movies')
+
+@tables_blueprint.route('/tables/Actors')
+def get_Actors():
+    return get_table_data('Actors')
+
+@tables_blueprint.route('/tables/Actors_in_movie')
+def get_Actors_in_movie():
+    return get_table_data('Actors_in_movie')
+
+```
+
+![table](imgs/backend/table.png)
+
+Dane są wyświetlane w tabelce dzięki plikowi `table.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Rentals</title>
+    <style>
+        table {
+            width: 70%;
+            border-collapse: collapse;
+            margin: auto;
+        }
+        th, td {
+            border: 1px solid rgb(125, 125, 125);
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            text-align: center;
+        }
+        th {
+            background-color: #d5d5d5;
+        }
+        h2, p {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <br>
+    <a href="../">< Powrót do strony głównej</a>
+
+    {% if display_name == "" %}
+        <h2>Wszystkie dane z {{ table_name }}:</h2>
+    {% else %}
+        <h2>Wszystkie dane z {{ display_name }}:</h2>
+    {% endif %}
+
+    {% if comment != "" %}
+        <p>{{comment}}</p>
+    {% endif %}
+    <br>
+    <table border="1">
+        <thead>
+            <tr>
+                {% for column in column_names %}
+                    <th>{{ column }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+                <tr>
+                    {% for cell in row %}
+                        <td>{{ cell }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
+```
+
+### Widoki
+
+![views](imgs/backend/views.png)
+
+Stworzyliśmy osobny plik zawierający endponty dla widoków:
+
+```python
+from flask import Blueprint, request, render_template
+from base import execute_and_render, get_table_data, call_function
+
+
+views_blueprint = Blueprint('views', __name__)
+
+views = (
+    ('views.VW_MOVIE_POPULARITY', 'Movie Popularity'),
+    ('views.VW_CURRENT_RESERVATIONS', 'Current Reservations'),
+    ('views.VW_AVAILABLE_COPIES', 'Available Copies (filtrowanie, rezerwacja)'),
+    ('views.VW_ACTOR_RENTALS', 'Actor Rentals'),
+    ('views.VW_MOST_POPULAR_ACTORS_PER_CATEGORY', 'Actors Per Category'),
+    ('views.VW_CLIENTS_DELAYS_SUM', 'Clients Delays Summary'),
+    ('views.VW_CURRENTLY_BORROWED_COPIES', 'Currently Borrowed Copies'),
+)
+
+@views_blueprint.route('/VW_MOVIE_POPULARITY')
+def VW_MOVIE_POPULARITY():
+    return get_table_data('VW_MOVIE_POPULARITY', display_name='Movie Popularity')
+
+
+@views_blueprint.route('/VW_CURRENT_RESERVATIONS')
+def VW_CURRENT_RESERVATIONS():
+    return get_table_data('VW_CURRENT_RESERVATIONS', display_name='Current Reservations')
+    
+
+@views_blueprint.route('/VW_AVAILABLE_COPIES', methods=['GET', 'POST'])   # dostępne kopie wyszukiwaniem i funkcją rezerwacji
+def VW_AVAILABLE_COPIES():
+    if request.method == 'GET':
+        return execute_and_render("select * from VW_AVAILABLE_COPIES", 'views/available_copies.html', 'copies')
+    
+    movie_id = request.form.get('movie_id')
+    movie_name = request.form.get('movie_name')
+    print("Arguments:", movie_id, movie_name)
+
+    if movie_id:
+        print("Movie ID:", movie_id)
+        result = call_function('f_get_available_copies_for_movie_id', [int(movie_id)])
+        print("Result:", result)
+        if 'error' in result:
+            result = []
+        return render_template('views/available_copies.html', copies=result)
+    elif movie_name:
+        print("Movie Name:", movie_name)
+        result = call_function('f_get_available_copies_for_movie_name', [movie_name])
+        print("Result:", result)
+        if 'error' in result:
+            result = []
+        return render_template('views/available_copies.html', copies=result)
+    else:
+        return execute_and_render("select * from VW_AVAILABLE_COPIES", 'views/available_copies.html', 'copies')
+
+
+@views_blueprint.route('/VW_ACTOR_RENTALS')
+def VW_ACTOR_RENTALS():
+    return get_table_data('VW_ACTOR_RENTALS', display_name='Actor Rentals')
+
+
+@views_blueprint.route('/VW_MOST_POPULAR_ACTORS_PER_CATEGORY')
+def VW_MOST_POPULAR_ACTORS_PER_CATEGORY():
+    return get_table_data('VW_MOST_POPULAR_ACTORS_PER_CATEGORY', display_name='Most Popular Actors Per Category')
+
+
+@views_blueprint.route('/VW_CLIENTS_DELAYS_SUM')
+def VW_CLIENTS_DELAYS_SUM():
+    return get_table_data('VW_CLIENTS_DELAYS_SUM',
+                          display_name='Clients Delays Summary',
+                          comment='This view displays the total days of delay for each client.')
+    
+
+@views_blueprint.route('/VW_CURRENTLY_BORROWED_COPIES')
+def VW_CURRENTLY_BORROWED_COPIES():
+    return get_table_data('VW_CURRENTLY_BORROWED_COPIES', 
+                          display_name='Currently Borrowed Copies',
+                          comment='This view displays all copies that are currently borrowed.')
+```
+
+Przykładowy widok przedstawiający możliwość złożenia rezerwacji na dostępne filmy. Możliwe jest wyszukanie filmu pjaki nas interesuje po nazwie
+
+![views](imgs/backend/available_copies.png)
+
+Po kliknięciu przycisku reserve otwiera się formularz z danymi do wypełnienia
+
+![views](imgs/backend/available_copies-2.png)
+
+Po wypełnieniu danych możemy zobaczyć, ży wykonana została procedura odpowiedzialna za dodanie nowej rezerwacji. I pojawiła się nowa rezerwacja:
+
+![views](imgs/backend/available_copies-3.png)
+
+### Funkcje
+
+Plik `functions.py` odpowedzialny za tworzenie endpointów dla funckji z bazy danych, które zwracają widoki tabel.
+
+```python
+from flask import Blueprint, request, render_template, redirect, url_for
+from base import call_function, execute_querry
+
+
+functions_blueprint = Blueprint('functions', __name__)
+
+functions = (
+        ('functions.filter_movies', 'Search movies (po kategoriach)'),
+        ('functions.client_reservations', 'Client Reservations (po id klienta)'),
+        ('procedures.rent_movie_form', 'Rent movie (formularz do wypożyczania)'),
+        ('procedures.return_movie_form', 'Return movie (formularz do zwrotów)'),
+    )
+
+
+@functions_blueprint.route('/filter_movies', methods=['GET', 'POST'])
+def filter_movies():
+    if request.method == 'POST':
+        category_id = request.form['category_id']
+        result = call_function('f_get_movies_by_category', [int(category_id)])
+        
+        if 'error' in result:
+            return f"Error: {result['error']}", 500
+        else:
+            movies = result
+    else:
+        movies = get_all_movies()
+
+    return render_template('views/movie_filter_form.html', categories=get_categories(), movies=movies)
+
+def get_all_movies():
+    query = "SELECT * FROM vw_movies_with_category"
+    movies = execute_querry(query)
+    return movies
+
+def get_categories():
+    query = "SELECT category_id, name FROM Categories"
+    categories = execute_querry(query)
+    return categories
+
+
+@functions_blueprint.route('/client_reservations/<int:client_id>')
+def client_reservations(client_id):
+    result = call_function("f_get_client_reservations", [int(client_id)])
+        
+    if 'error' in result:
+        return f"Wystąpił błąd: {result['error']}", 500
+    else:
+        return render_template('functions/get_client_reservations.html', reservations=result, client_id=client_id)
+
+@functions_blueprint.route('/client_reservations', methods=['POST'])
+def redirect_client_reservations():
+    client_id = request.form.get('client_id')
+    return redirect(url_for('functions.client_reservations', client_id=client_id))
+
+```
+
+Funkcja pokazująca filmy filtrowane po kategori do jakiej należą:
+
+![function](imgs/backend/filter_by_category-1.png)
+
+![function](imgs/backend/filter_by_category-2.png)
+
+### Procedury
+
+Plik `procedures.py` zawiera endpointy dla procedur z naszej bazy danych
+
+```python
+from flask import Blueprint, request, render_template, redirect, url_for
+from base import call_procedure, get_table_data
+
+
+procedures_blueprint = Blueprint('procedures', __name__)
+
+@procedures_blueprint.route('/reserve', methods=['POST'])
+def reserve():
+    copy_id = request.form['copy_id']
+    return render_template('procedures/reservation_form.html', copy_id=copy_id)
+
+@procedures_blueprint.route('/add_reservation', methods=['POST'])
+def add_reservation():
+    client_id = request.form['client_id']
+    copy_id = request.form['copy_id']
+    rental_duration = request.form['rental_duration']
+    
+    result = call_procedure('p_add_reservation', [int(client_id), int(copy_id), int(rental_duration)])
+    
+    if 'error' in result:
+        return "Error: " + result['error'], 500
+    else:
+        return redirect(url_for('views.VW_AVAILABLE_COPIES'))
+
+@procedures_blueprint.route('/cancel_reservation/<int:reservation_id>', methods=['POST'])
+def cancel_reservation(reservation_id):
+    client_id = request.form.get('data-client-id')  # Odczytaj client_id z atrybutu data-client-id
+
+    if client_id is None:
+        return "Error: Client ID is missing", 400
+    
+    new_status = 'C'
+
+    result = call_procedure('p_change_reservation_status', [int(reservation_id), new_status])
+    if 'error' in result:
+        return "Error: " + result['error'], 500
+    else:
+        return redirect(url_for('functions.client_reservations', client_id=client_id))
+
+@procedures_blueprint.route('/rent_movie_form', methods=['GET'])
+def rent_movie_form():
+    return render_template('functions/rent_movie_form.html')
+
+@procedures_blueprint.route('/rental', methods=['POST'])
+def rental():
+    client_id = request.form['client_id']
+    copy_id = request.form['copy_id']
+    rental_duration = request.form['rental_duration']
+
+    result = call_procedure('p_add_new_rental', [int(client_id), int(copy_id), int(rental_duration)])
+    
+    if 'error' in result:
+        return "Error: " + result['error'], 500
+    else:
+        return redirect('http://localhost:5000')
+    
+@procedures_blueprint.route('/return_movie_form', methods=['GET'])
+def return_movie_form():
+    return render_template('procedures/return_movie_form.html')
+
+
+@procedures_blueprint.route('/return_movie', methods=['POST'])
+def return_movie():
+    rental_id = request.form['rental_id']
+
+    result = call_procedure('P_RETURN_RENTAL', [int(rental_id)])
+    
+    if 'error' in result:
+        return "Error: " + result['error'], 500
+    else:
+        return redirect('http://localhost:5000')
+
+@procedures_blueprint.route('/add_client_form', methods=['GET'])
+def add_client_form():
+    return render_template('procedures/add_client_form.html')
+
+@procedures_blueprint.route('/add_client', methods=['POST'])
+def add_client():
+    firstname = request.form['firstname']
+    lastname = request.form['lastname']
+    address = request.form['address']
+    phone = request.form['phone']
+
+    result = call_procedure('p_add_client', [firstname, lastname, address, phone])
+    
+    if 'error' in result:
+        return "Error: " + result['error'], 500
+    else:
+        return redirect(url_for('index'))
+
+@procedures_blueprint.route('/delete_client_form', methods=['GET'])
+def delete_client_form():
+    return render_template('procedures/delete_client_form.html')
+
+@procedures_blueprint.route('/delete_client', methods=['POST'])
+def delete_client():
+    client_id = request.form['client_id']
+
+    result = call_procedure('p_delete_client', [int(client_id)])
+    
+    if 'error' in result:
+        return "Error: " + result['error'], 500
+    else:
+        return redirect(url_for('index'))
+
+@procedures_blueprint.route('/update_client_form', methods=['GET'])
+def update_client_form():
+    return render_template('procedures/update_client_form.html')
+
+@procedures_blueprint.route('/update_client', methods=['POST'])
+def update_client():
+    client_id = request.form['client_id']
+    firstname = request.form['firstname']
+    lastname = request.form['lastname']
+    address = request.form['address']
+    phone = request.form['phone']
+
+    result = call_procedure('p_update_client', [int(client_id), firstname, lastname, address, phone])
+    
+    if 'error' in result:
+        return "Error: " + result['error'], 500
+    else:
+        return redirect(url_for('index'))
+```
+
+### Działanie procedur
+
+#### Anulowanie rezerwacji
+
+Wcześniej pokazaliśmy tworzenie rezerwacji przez klienta, a teraz anulowanie rezerwacji - po kliknięciu `cancel` rezerwacja zmienia swój stacu na `C`(canceled):
+
+ ![cancel_reservation](imgs/backend/cancel_reservation-1.png)
+
+ ![cancel_reservation](imgs/backend/cancel_reservation-2.png)
+
+
+#### Wyporzyczenie filmu
+
+Po kliknięciu linku możemy wypełnić formularz do wypożyczenia filmu. Musimy podać CopyId i ClientId oraz możemy zmienić dłogość wypożyczenia.
+
+![rent_movie](imgs/backend/rent_movie-1.png)
+
+Przykładowe dane:
+
+![rent_movie](imgs/backend/rent_movie-2.png)
+
+I w tabeli rental na samym końcy pojawiło się nowe wypożyczenie:
+
+![rent_movie](imgs/backend/rent_movie-3.png)
+
+#### Zwrot filmu do wypożyczalni
+
+Spróbujmy zwrócić przedchwilą wypożyczony film. Po kliknięciu w link do zwrotu ukazyuje nam się formularz do zwrotu filmu.
+
+![return_movie](imgs/backend/return_movie-1.png)
+
+I widzimy, że film został zwrócony.
+
+![return_movie](imgs/backend/return_movie-2.png)
+
+### Operacje CRUD
+
+Zrealizowaliśmy opracje CRUD na tabeli `Clients`
+
+![client](imgs/backend/client.png)
+
+#### Dodanie nowego klienta
+
+![client](imgs/backend/client_add-1.png)
+
+![client](imgs/backend/client_add-2.png)
+
+#### Aktualizacja klienta
+
+![client](imgs/backend/client_update-1.png)
+
+![client](imgs/backend/client_update-2.png)
+
+#### Usunięcie klienta
+
+![client](imgs/backend/client_delete-1.png)
+
+#### Wyświetlenie pełnej listy klientów
+
+![client](imgs/backend/client_display-1.png)

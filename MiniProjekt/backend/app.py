@@ -26,6 +26,5 @@ def index():
             default_client_id=1   # Ustaw domyślną wartość client_id
             )
 
-
 if __name__ == '__main__':
     app.run(debug=True)

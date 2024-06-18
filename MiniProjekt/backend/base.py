@@ -33,6 +33,9 @@ def connect_to_data_base():
 
 
 def execute_querry(sql: str) -> list[any] | dict[str, str]:
+    if conn is None:
+        return {'error': 'Błąd podczas łączenia z bazą danych'}
+    
     try:
         cursor = conn.cursor()
         cursor.execute(sql)
@@ -93,15 +96,10 @@ def call_function(func_name: str, args: list[int | str]) -> dict[str, any]:
 
     try:
         cursor = conn.cursor()
-
         result_cursor = cursor.var(cx_Oracle.CURSOR)
-
         cursor.callfunc(func_name, result_cursor, args)
-
         result_cursor = result_cursor.getvalue()
-
         rows = result_cursor.fetchall() if result_cursor else []
-
         cursor.close()
         return rows
     except cx_Oracle.Error as error:

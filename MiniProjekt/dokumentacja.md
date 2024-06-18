@@ -1039,7 +1039,8 @@ BEGIN
 END;
 ```
 #### `p_add_client`
-Procedura umożliwa dodanie nowego klienta do tabeli  `Clients`. Odpowiada fizycznemu zapisaniu się do wypożyczalni.
+
+Procedura P_ADD_CLIENT dodaje nowego klienta do tabeli `CLIENTS` z podanymi danymi: imieniem, nazwiskiem, adresem i numerem telefonu. Jeśli podczas dodawania klienta wystąpi błąd, procedura zgłasza komunikat.
 
 ```sql
 create PROCEDURE P_ADD_CLIENT (
@@ -1068,7 +1069,9 @@ Rezultat - nowy klient został dodany:
 ![alt text](image.png)
 
 #### `p_delete_client`
-Procedura umożliwa usunięcie klienta z tabeli  `Clients` znające jego `id` . Operacja jest niemożliwa do wykonania gdy w bazie nie występuje taki klient lub gdy klient ma na wyporzyczeniu jakiś film.
+
+Procedura umożliwa usunięcie klienta z tabeli  `Clients` znające jego `id`. Operacja jest niemożliwa do wykonania gdy w bazie nie występuje taki klient lub gdy klient ma na wyporzyczeniu jakiś film.
+
 ```sql
 create PROCEDURE P_DELETE_CLIENT (
     p_client_id IN NUMBER
@@ -1104,7 +1107,9 @@ END;
 ![alt text](image-1.png)
 
 #### `p_update_client`
-Procedura umożliwa modyfikacje danych klienta z tabeli  `Clients`. Operacja jest niemożliwa do wykonania gdy w bazie nie występuje taki klient.
+
+Procedura umożliwa modyfikacje danych klienta z tabeli  `Clients`. Jeśli klient o podanym identyfikatorze nie istnieje, procedura zgłasza wyjątek z komunikatem.
+
 ```sql
 create PROCEDURE P_UPDATE_CLIENT (
     p_client_id IN NUMBER,
@@ -1301,7 +1306,7 @@ END;
 ```
 #### `t_prevent_delete_client_with_rentals`
 
-Triger odpowiada za zmianę statusu kopii w tabeli `Copy` przy zwracaniu wypożyczenia.
+Trigger `T_PREVENT_DELETE_CLIENT_WITH_RENTALS` uniemożliwia usunięcie klienta z tabeli `CLIENTS`, jeśli ma on wypożyczone filmy z nieuzupełnioną datą zwrotu w tabeli RENTAL, w takim przypadku trigger zgłasza błąd z komunikatem "Nie można usunąć klienta, który ma wypożyczone filmy"
 
 ```sql
 create trigger T_PREVENT_DELETE_CLIENT_WITH_RENTALS
@@ -2056,10 +2061,9 @@ def update_client():
 
 Wcześniej pokazaliśmy tworzenie rezerwacji przez klienta, a teraz anulowanie rezerwacji - po kliknięciu `cancel` rezerwacja zmienia swój stacu na `C`(canceled):
 
- ![cancel_reservation](imgs/backend/cancel_reservation-1.png)
+![cancel_reservation](imgs/backend/cancel_reservation-1.png)
 
- ![cancel_reservation](imgs/backend/cancel_reservation-2.png)
-
+![cancel_reservation](imgs/backend/cancel_reservation-2.png)
 
 #### Wypożyczenie filmu
 
@@ -2080,7 +2084,6 @@ I w tabeli rental na samym końcy pojawiło się nowe wypożyczenie:
 Spróbujmy zwrócić przedchwilą wypożyczony film. Po kliknięciu w link do zwrotu ukazyuje nam się formularz do zwrotu filmu.
 
 ![return_movie](imgs/backend/return_movie-1.png)
-
 
 I widzimy, że film został zwrócony.
 

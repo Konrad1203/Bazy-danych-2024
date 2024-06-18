@@ -1288,7 +1288,7 @@ def execute_querry(sql: str) -> list[any] | dict[str, str]:
         return {'error': str(error)}
 ```
 
-
+\
 Funkcja `call_function` wykonuje wywołanie funkcji przechowywanej w bazie danych Oracle, przekazując jej argumenty, a następnie zwraca wynik jako listę wierszy wynikowych. Obsługuje również błędy związane z połączeniem z bazą danych i wyjątki z biblioteki cx_Oracle, umożliwiając roll-back transakcji w przypadku wystąpienia problemu.
 
 ```python
@@ -1311,6 +1311,7 @@ def call_function(func_name: str, args: list[int | str]) -> dict[str, any]:
         return {'error': str(error)}
 ```
 
+\
 Funkcja `call_procedure` wykonuje procedurę przechowywaną w bazie danych Oracle, przekazując jej argumenty i zatwierdzając zmiany w bazie danych po jej wykonaniu. Obsługuje błędy związane z połączeniem z bazą danych oraz wyjątki z biblioteki cx_Oracle, umożliwiając roll-back transakcji w przypadku wystąpienia problemu podczas wykonywania procedury. Funkcja zwraca komunikat o pomyślnym wykonaniu procedury lub informację o błędzie.
 
 ```python
@@ -1331,6 +1332,7 @@ def call_procedure(proc_name: str, args: list[int | str]) -> dict[str, any]:
         return {'error': str(error)}
 ```
 
+\
 Funkcja `get_table_data` pobiera nazwy kolumn oraz dane z określonej tabeli w bazie danych, a następnie renderuje je w szablonie HTML. Parametry opcjonalne display_name i comment służą do dodatkowego dostosowania wyglądu wyrenderowanej tabeli.
 
 ```python
@@ -1349,7 +1351,7 @@ def get_table_data(table_name: str, display_name: str = "", comment: str = "") -
                            )
 ```
 
-
+\
 Funkcja `execute_and_render` wykonuje podane zapytanie do bazy danych za pomocą funkcji `execute_querry`, a następnie renderuje wynikowy szablon HTML przy użyciu `render_template`. Jeśli wykonanie zapytania zakończy się błędem, funkcja zwraca komunikat o błędzie. W przeciwnym razie zwraca szablon HTML z danymi zapytania, które są przekazane pod nazwą określoną przez parametr `value_name`.
 
 ```python
@@ -1363,10 +1365,14 @@ def execute_and_render(query: str, template_url: str, value_name: str = 'data') 
 
 ### Uruchomienie
 
-Po uruchomieniu pliku `main.py`(zawartość jest pokazana wyżej) i wpisaniu w przegldądarce `http://localhost:5000` pokazuje się wybór możliwych endpointów.
+Po uruchomieniu pliku `main.py` (zawartość jest pokazana wyżej) i wpisaniu w przegldądarce `http://localhost:5000` pokazuje się wybór możliwych endpointów.
 
-![menu_start](imgs/backend/menu.png)
+![menu1](imgs/backend/menu1.png)
+![menu2](imgs/backend/menu2.png)
+![menu3](imgs/backend/menu3.png)
+![menu4](imgs/backend/menu4.png)
 
+\
 Szablon strony internetowej, który wyświetla naszą stronę startową:
 
 ```html
@@ -1418,7 +1424,7 @@ Szablon strony internetowej, który wyświetla naszą stronę startową:
 
 ### Tabele
 
-Do wyświetlania tebal stworzyliśmy osobny plik `tables.py`, który zawiera endpoint to funkcji, które następnie wywołują funckje `get_table_data()` odpowiedzialną za render odpowiedniej tabeli.
+Do wyświetlania tabel stworzyliśmy osobny plik `tables.py` z endpoint'ami do każdej tabeli, które następnie wywołują funckje `get_table_data()` odpowiedzialną za wygenerowanie odpowiedniej tabeli.
 
 ```python
 from flask import Blueprint
@@ -1544,8 +1550,9 @@ Dane są wyświetlane w tabelce dzięki plikowi `table.html`
 
 ### Widoki
 
-![views](imgs/backend/views.png)
+![views](imgs/backend/menu2.png)
 
+\
 Stworzyliśmy osobny plik zawierający endponty dla widoków:
 
 ```python
@@ -1626,11 +1633,16 @@ def VW_CURRENTLY_BORROWED_COPIES():
                           comment='This view displays all copies that are currently borrowed.')
 ```
 
+\
 Przykładowy widok przedstawiający możliwość złożenia rezerwacji na dostępne filmy. Możliwe jest wyszukanie filmu pjaki nas interesuje po nazwie
 
 ![views](imgs/backend/available_copies.png)
 
-Po kliknięciu przycisku reserve otwiera się formularz z danymi do wypełnienia
+Możemy oczywiście przeszukiwać zbiór dostępnych kopii:
+
+![views](imgs/backend/available_copies_filter.png)
+
+Po kliknięciu przycisku `Reserve` otwiera się formularz z danymi do wypełnienia
 
 ![views](imgs/backend/available_copies-2.png)
 
@@ -1640,7 +1652,7 @@ Po wypełnieniu danych możemy zobaczyć, ży wykonana została procedura odpowi
 
 ### Funkcje
 
-Plik `functions.py` odpowedzialny za tworzenie endpointów dla funckji z bazy danych, które zwracają widoki tabel.
+Plik `functions.py` odpowiedzialny za tworzenie endpointów dla funkcji z bazy danych, które zwracają widoki tabel.
 
 ```python
 from flask import Blueprint, request, render_template, redirect, url_for
@@ -1699,6 +1711,7 @@ def redirect_client_reservations():
 
 ```
 
+\
 Funkcja pokazująca filmy filtrowane po kategori do jakiej należą:
 
 ![function](imgs/backend/filter_by_category-1.png)
@@ -1846,9 +1859,9 @@ Wcześniej pokazaliśmy tworzenie rezerwacji przez klienta, a teraz anulowanie r
  ![cancel_reservation](imgs/backend/cancel_reservation-2.png)
 
 
-#### Wyporzyczenie filmu
+#### Wypożyczenie filmu
 
-Po kliknięciu linku możemy wypełnić formularz do wypożyczenia filmu. Musimy podać CopyId i ClientId oraz możemy zmienić dłogość wypożyczenia.
+Po kliknięciu linku możemy wypełnić formularz do wypożyczenia filmu. Musimy podać `CopyId` i `ClientId` oraz możemy ustawić czas trwania wypożyczenia.
 
 ![rent_movie](imgs/backend/rent_movie-1.png)
 

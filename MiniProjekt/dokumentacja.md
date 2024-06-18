@@ -1038,6 +1038,111 @@ BEGIN
     update_copy_availability();
 END;
 ```
+#### `p_add_client`
+Procedura umożliwa dodanie nowego klienta do tabeli  `Clients`. Odpowiada fizycznemu zapisaniu się do wypożyczalni.
+
+```sql
+create PROCEDURE P_ADD_CLIENT (
+    p_firstname IN VARCHAR2,
+    p_lastname IN VARCHAR2,
+    p_address IN VARCHAR2,
+    p_phone IN VARCHAR2
+) AS
+BEGIN
+    BEGIN
+        INSERT INTO CLIENTS (FIRSTNAME, LASTNAME, ADDRESS, PHONE)
+        VALUES (p_firstname, p_lastname, p_address, p_phone);
+    EXCEPTION
+        WHEN OTHERS THEN
+            RAISE_APPLICATION_ERROR(-20001, 'Error adding client: ' || SQLERRM);
+    END;
+END p_add_client;
+```
+Przykład użycia:
+```sql
+BEGIN
+    p_add_client('Jan', 'Krakowski', 'Warszawa, ul. Krakowskie Przedmieście 1', '123456789');
+END;
+```
+Rezultat - nowy klient został dodany:
+![alt text](image.png)
+
+#### `p_delete_client`
+Procedura umożliwa usunięcie klienta z tabeli  `Clients` znające jego `id` . Operacja jest niemożliwa do wykonania gdy w bazie nie występuje taki klient lub gdy klient ma na wyporzyczeniu jakiś film.
+```sql
+create PROCEDURE P_DELETE_CLIENT (
+    p_client_id IN NUMBER
+) AS
+    v_exists NUMBER;
+BEGIN
+    SELECT COUNT(*) INTO v_exists FROM CLIENTS WHERE CLIENT_ID = p_client_id;
+    
+    IF v_exists = 0 THEN
+        RAISE_APPLICATION_ERROR(-20002, 'Client does not exist.');
+    END IF;
+
+    BEGIN
+        DELETE FROM CLIENTS 
+        WHERE CLIENT_ID = p_client_id;
+    EXCEPTION
+        WHEN OTHERS THEN
+            RAISE_APPLICATION_ERROR(-20003, 'Error deleting client: ' || SQLERRM);
+    END;
+END P_DELETE_CLIENT;
+```
+Wykorzystanie procedury:
+```sql
+BEGIN
+    P_DELETE_CLIENT(61); -- Jan Kowalski
+END;
+```
+```sql
+BEGIN
+    P_DELETE_CLIENT(62); -- Nie ma takiego klienta
+END;
+```
+![alt text](image-1.png)
+
+#### `p_update_client`
+Procedura umożliwa modyfikacje danych klienta z tabeli  `Clients`. Operacja jest niemożliwa do wykonania gdy w bazie nie występuje taki klient.
+```sql
+create PROCEDURE P_UPDATE_CLIENT (
+    p_client_id IN NUMBER,
+    p_firstname IN VARCHAR2,
+    p_lastname IN VARCHAR2,
+    p_address IN VARCHAR2,
+    p_phone IN VARCHAR2
+) AS
+    v_exists NUMBER;
+BEGIN
+    SELECT COUNT(*) INTO v_exists FROM CLIENTS WHERE CLIENT_ID = p_client_id;
+
+    IF v_exists = 0 THEN
+        RAISE_APPLICATION_ERROR(-20004, 'Client does not exist.');
+    END IF;
+
+    BEGIN
+        UPDATE CLIENTS
+        SET FIRSTNAME = p_firstname, LASTNAME = p_lastname, ADDRESS = p_address, PHONE = p_phone
+        WHERE CLIENT_ID = p_client_id;
+    EXCEPTION
+        WHEN OTHERS THEN
+            RAISE_APPLICATION_ERROR(-20005, 'Error updating client: ' || SQLERRM);
+    END;
+END P_UPDATE_CLIENT;
+```
+Wykorzystanie procedury:
+```sql
+BEGIN
+    p_update_client(1, 'Janusz', 'Kowalski', 'Kraków, ul. Floriańska 2', '987654321');
+END;
+```
+```sql
+BEGIN
+    p_update_client(100, 'Dariusz', 'Michalski', 'Kraków, ul. Floriańska 2', '987654321'); -- Nie ma takiego klienta
+END;
+```
+![alt text](image-1.png)
 
 ---
 ### Triggery
@@ -1194,6 +1299,36 @@ EXCEPTION
 END;
 
 ```
+#### `t_prevent_delete_client_with_rentals`
+
+Triger odpowiada za zmianę statusu kopii w tabeli `Copy` przy zwracaniu wypożyczenia.
+
+```sql
+create trigger T_PREVENT_DELETE_CLIENT_WITH_RENTALS
+    before delete
+    on CLIENTS
+    for each row
+DECLARE
+    v_rentals_count NUMBER;
+BEGIN
+    -- Sprawdzenie, czy klient ma wypożyczone filmy
+    SELECT COUNT(*)
+    INTO v_rentals_count
+    FROM RENTAL
+    WHERE CLIENT_ID = :OLD.CLIENT_ID
+      AND RETURN_DATE IS NULL;
+
+    IF v_rentals_count > 0 THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Nie można usunąć klienta, który ma wypożyczone filmy.');
+    END IF;
+END;
+
+```
+Przykład działania:
+![alt text](image-2.png)
+Klient o `id=6` nie oddał jeszcze filmu. Trigger zablokuje usunięcie danego klienta
+![alt text](image.png)
+
 ---
 <br />
 
@@ -1709,7 +1844,7 @@ Możemy oczywiście przeszukiwać zbiór dostępnych kopii:
 
 Po kliknięciu przycisku `Reserve` otwiera się formularz z danymi do wypełnienia
 
-![views](imgs/backend/available_copies-2.png)
+![form](imgs/backend/reservation_form.png)
 
 ![views](imgs/backend/available_copies-3.png)
 
@@ -1946,6 +2081,7 @@ Spróbujmy zwrócić przedchwilą wypożyczony film. Po kliknięciu w link do zw
 
 ![return_movie](imgs/backend/return_movie-1.png)
 
+
 I widzimy, że film został zwrócony.
 
 ![return_movie](imgs/backend/return_movie-2.png)
@@ -1956,6 +2092,7 @@ Zrealizowaliśmy opracje CRUD na tabeli `Clients`
 
 ![client](imgs/backend/client.png)
 
+
 #### Dodanie nowego klienta
 
 ![client](imgs/backend/client_add-1.png)
@@ -1965,6 +2102,7 @@ Zrealizowaliśmy opracje CRUD na tabeli `Clients`
 #### Aktualizacja klienta
 
 ![client](imgs/backend/client_update-1.png)
+
 
 ![client](imgs/backend/client_update-2.png)
 

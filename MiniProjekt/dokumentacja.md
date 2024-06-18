@@ -229,7 +229,7 @@ ALTER TABLE Actors_in_movie ADD CONSTRAINT Actors_in_movie_Movies
 
 #### `vw_available_copies`
 
-Widok dostępnych kopii filmów wyświetla listę dostępnych kopii filmów wraz z ich szczegółami, takimi jak tytuł filmu, kategoria, data wydania itp.
+Widok dostępnych kopii filmów wyświetla listę dostępnych kopii filmów wraz z ich szczegółami, takimi jak id filmu, id kopii, tytuł filmu, kategorię, data wydania oraz czas trwania.
 
 ```sql
 create or replace view VW_AVAILABLE_COPIES
@@ -388,7 +388,8 @@ SELECT * FROM VW_ACTOR_RENTALS;
 
 #### `vw_most_popular_actors_per_category`
 
-Widok przedstawia najpopularniejszego aktora występującego w filmach danej kategorii. 
+Widok przedstawia najpopularniejszego aktora występującego w filmach danej kategorii.  
+Widok zawiera kolumny o nazwie kategorii, najpopularniejszym aktorze, liczbie filmów z tym aktorem w danej kategorii.
 
 ```sql
 CREATE OR REPLACE VIEW vw_most_popular_actors_per_category AS
@@ -418,6 +419,7 @@ SELECT * FROM vw_most_popular_actors_per_category;
 #### `vw_movies_with_category`
 
 Widok wyświetla informacje o wszystkich filmach, które należą do wypożyczalni.
+Do tabeli `Movies` zamiast wyświetlać `Category_Id` pokazujemy nazwę tej kategorii.
 
 ```sql
 CREATE OR REPLACE VIEW vw_movies_with_category AS
@@ -570,7 +572,7 @@ select f_get_movies_by_category(123) from dual;
 ---
 
 #### `f_check_client_exist`
-Funkcja sprawdzająca czy dany client_id istnieje
+Funkcja ta sprawdza czy klient o podanym `client_id` istnieje w bazie danych. Funkcja zwraca odpowiednią wartość logiczną.
 ```sql
 CREATE OR REPLACE FUNCTION f_check_client_exist(client_id_input INT) 
 RETURN BOOLEAN
@@ -606,7 +608,7 @@ END;
 
 #### `f_check_copy_exist`
 
-Funkcja sprawdza czy podany copy_id istnieje:
+Funkcja sprawdza czy podana kopia z takim `copy_id` istnieje, zwraca odpowiednią wartość logiczną.
 ```sql
 CREATE OR REPLACE FUNCTION f_check_copy_exist(copy_id_input INT) 
 RETURN BOOLEAN
@@ -641,7 +643,7 @@ END;
 
 #### `f_user_has_reservation`
 
-Funkcja sprawdza czy podany użytkonik złożył wcześniej rezerwacje na dany film.
+Funkcja sprawdza czy podany użytkonik złożył wcześniej rezerwacje na konkretną kopię o podanym id. Zwraca odpowiednią wartość logiczną.
 
 ```sql
 CREATE OR REPLACE FUNCTION f_user_has_reservation(
@@ -683,7 +685,7 @@ Przy wywołaniu tej funkcji nie pojawia się żaden błąd więc można wnioskow
 
 #### `f_get_reservation_id`
 
-Funkcja odpowiedzialna za pobranie `reservation_id` istniejącej rezerwacji z tabli `Reservation`.
+Funkcja odpowiedzialna za pobranie oraz zwrócenie wartości `reservation_id` istniejącej rezerwacji z tabeli `Reservation` podając przy tym id użytkownika oraz id kopii.
 
 ```sql 
 CREATE OR REPLACE FUNCTION f_get_reservation_id(
@@ -719,7 +721,8 @@ Użycie:
 
 #### `f_get_available_copies_for_movie_id`
 
-Funkcja zwraca listę wszystkich wolnych kopii filmu o podanym id.
+Funkcja zwraca listę wszystkich dostępnych kopii filmu o podanym id. Funkcja zwraca wszystkie kolumny z widoku `vw_available_copies`, czyli kolejno:  
+id filmu, id kopii, tytuł filmu, kategoria, data wydania, czas trwania.
 ```sql
 create or replace FUNCTION f_get_available_copies_for_movie_id(movie_id_input INT)
 RETURN SYS_REFCURSOR
@@ -753,7 +756,8 @@ select f_get_available_copies_for_movie_id(5) from dual;
 
 #### `f_get_available_copies_for_movie_name`
 
-Funkcja zwraca listę wszystkich wolnych kopii filmu o podobnej nazwie.
+Funkcja zwraca listę wszystkich dostępnych kopii filmu o podobnej nazwie. Funkcja zwraca wszystkie kolumny z widoku `vw_available_copies`, czyli kolejno:  
+id filmu, id kopii, tytuł filmu, kategoria, data wydania, czas trwania.
 ```sql
 create or replace FUNCTION f_get_available_copies_for_movie_name(movie_name_input VARCHAR2)
 RETURN SYS_REFCURSOR
@@ -789,7 +793,8 @@ select F_GET_AVAILABLE_COPIES_FOR_MOVIE_NAME('piraci') from dual;
 
 #### `p_add_reservation`
 
-Procedura odpowiedzialna za dodanie nowej rezerwacji do tabeli `Reservations`.
+Procedura odpowiedzialna za dodanie nowej rezerwacji do tabeli `Reservations`.  
+Na początku sprawdzamy argument o długości wypożyczenia. Później obliczamy datą wygaśnięcia rezerwacji i wstawiamy te dane do tabeli.
 
 ```sql
 CREATE OR REPLACE PROCEDURE p_add_reservation(
@@ -832,7 +837,7 @@ END;
 
 #### `p_change_reservation_status`
 
-Procedura odpowiedzialna za zmianę statusu rezerwacji. Jeżeli nowy status jest `C` (cancelled) to zmienia pole `is_available` w tabeli `Copy` na `Y`, w przeciwnym przypadku ustawia tą wartość na `N`.
+Procedura odpowiedzialna za zmianę statusu rezerwacji. Jeżeli nowy status jest `C` (cancelled) to zmienia pole `is_available` w tabeli `Copy` na `Y` (dostępna), w przeciwnym przypadku ustawia tą wartość na `N` (niedostępna).
 
 ```sql
 CREATE OR REPLACE PROCEDURE p_change_reservation_status(
@@ -949,7 +954,7 @@ po wykonaniu procedury:
 
 #### `p_return_rental`
 
-Procedura opowiedzialna za zwrot kopii i uzupełnienie pola `RETURN_DATE` w `Rental`. Odpowiada fizycznemu zwrotowi filmu do wypożyczalni.
+Procedura opowiedzialna za zwrot kopii i uzupełnienie daty zwrotu `RETURN_DATE` w `Rental`. Odpowiada fizycznemu zwrotowi filmu do wypożyczalni.
 
 ```sql
 create PROCEDURE P_RETURN_RENTAL (rental_id_input INT)
@@ -1039,7 +1044,7 @@ END;
 
 #### `t_copy_check_available`
 
-Triger sprawdza czy po zmianach w tabeli `Copy`, pole `is_available` ma wartość `N` albo `Y`.
+Triger sprawdza przed dodaniem lub aktualizacją rekordu w tabeli `Copy`, czy pole `is_available` ma wartość `N` albo `Y`.
 
 ```sql
 CREATE OR REPLACE TRIGGER t_copy_check_available
@@ -1057,7 +1062,8 @@ END;
 ---
 #### `t_reservation_add`
 
-Triger odpowiada za walidacje danych przy dodawaniu nowej rezerwacji oraz za zmianę statusu w tabeli `Copy`.
+Triger odpowiada za walidację danych przy dodawaniu nowej rezerwacji oraz za zmianę statusu w tabeli `Copy`.  
+Sprawdzamy czy istnieje taki użytkownik i kopia oraz sprawdzamy czy można zarezerwować tę kopię.
 
 ```sql
 CREATE OR REPLACE TRIGGER t_reservation_add
@@ -1109,7 +1115,7 @@ END;
 
 #### `t_reservation_update`
 
-Triger sprawdza czy nowy status skłąda się ze znaku `C`, `N` lub `R` oraz aktualizuje status w tabeli `Copy`.
+Triger sprawdza czy nowy status składa się ze znaku `C`, `N` czy `R` oraz aktualizuje status dostępności w tabeli `Copy`.
 
 ```sql
 CREATE OR REPLACE TRIGGER t_reservation_update

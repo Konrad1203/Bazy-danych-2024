@@ -3,45 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <title>Client Reservations</title>
 </head>
 <body>
-    <h1>Client Reservations</h1>
-    <form method="post" action="/client_reservations">
-        <label for="client_id">Client ID:</label>
-        <input type="number" id="client_id" name="client_id" required>
-        <button type="submit">Search</button>
-    </form>
-    <p>Client ID: {{ client_id }}</p>
-    <table>
-        <thead>
-            <tr>
-                <th>Reservation ID</th>
-                <th>Movie Title</th>
-                <th>Reservation Date</th>
-                <th>Reservation Expiry Date</th>
-                <th>Status</th>
-                <th>Cancel</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in reservations %}
-            <tr>
-                <td>{{ row[0] }}</td>
-                <td>{{ row[1] }}</td>
-                <td>{{ row[2] }}</td>
-                <td>{{ row[3] }}</td>
-                <td>{{ row[4] }}</td>
-                <td>
-                    <form action="/cancel_reservation/{{ row[0] }}" method="POST" data-client-id="{{ client_id }}">
-                        <input type="hidden" name="reservation_id" value="{{ row[0] }}">
-                        <input type="hidden" name="data-client-id" value="{{ client_id }}">
-                        <button type="submit">Cancel</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="container mt-5">
+        <a href="../" class="btn btn-primary mb-4">< Powrót do strony głównej</a>
+        <h1 class="mb-4">Client Reservations</h1>
+        
+        <form method="post" action="/client_reservations" class="form-inline mb-4">
+            <div class="form-group mr-2">
+                <label for="client_id" class="mr-2">Client ID:</label>
+                <input type="number" id="client_id" name="client_id" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+
+        <p><strong>Client ID:</strong> {{ client_id }}</p>
+        
+        <table class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Reservation ID</th>
+                    <th>Movie Title</th>
+                    <th>Reservation Date</th>
+                    <th>Reservation Expiry Date</th>
+                    <th>Status</th>
+                    <th>Cancel</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in reservations %}
+                <tr>
+                    <td>{{ row[0] }}</td>
+                    <td>{{ row[1] }}</td>
+                    <td>{{ row[2] }}</td>
+                    <td>{{ row[3] }}</td>
+                    <td>{{ row[4] }}</td>
+                    <td>
+                        <form action="/cancel_reservation/{{ row[0] }}" method="POST" data-client-id="{{ client_id }}" class="d-inline">
+                            <input type="hidden" name="reservation_id" value="{{ row[0] }}">
+                            <input type="hidden" name="data-client-id" value="{{ client_id }}">
+                            <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

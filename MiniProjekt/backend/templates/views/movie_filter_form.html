@@ -3,54 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <title>Filter Movies by Category</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-    </style>
 </head>
 <body>
-    <h1>Filter Movies by Category</h1>
-    <form action="/filter_movies" method="POST">
-        <label for="category_id">Select Category:</label>
-        <select name="category_id" id="category_id">
-            {% for category in categories %}
-            <option value="{{ category[0] }}">{{ category[1] }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit">Filter</button>
-        <button type="button" onclick="window.location.href='/filter_movies'">Reset</button>
-    </form>
+    <div class="container mt-5">
+        <a href="../" class="btn btn-primary mb-4">< Powrót do strony głównej</a>
+        <h1 class="mb-4">Filter Movies by Category</h1>
+        
+        <form action="/filter_movies" method="POST" class="form-inline mb-4">
+            <div class="form-group mr-2">
+                <label for="category_id" class="mr-2">Select Category:</label>
+                <select name="category_id" id="category_id" class="form-control">
+                    {% for category in categories %}
+                    <option value="{{ category[0] }}">{{ category[1] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary mr-2">Filter</button>
+            <button type="button" class="btn btn-secondary" onclick="window.location.href='/filter_movies'">Reset</button>
+        </form>
 
-    {% if movies %}
-    <h2>Movies in Selected Category</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Category Name</th>
-                <th>Movie Title</th>
-                <th>Description</th>
-                <th>Release Date</th>
-                <th>Duration</th>
-                <th>Rating</th>
-                <th>Director</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for movie in movies %}
-            <tr>
-                <td>{{ movie[0] }}</td>
-                <td>{{ movie[1] }}</td>
-                <td>{{ movie[2] }}</td>
-                <td>{{ movie[3].strftime('%Y-%m-%d') }}</td>
-                <td>{{ movie[4] }}</td>
-                <td>{{ movie[5] }}</td>
-                <td>{{ movie[6] }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% endif %}
+        {% if movies %}
+        <h2 class="mb-4">Movies in Selected Category</h2>
+        <table class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Category Name</th>
+                    <th>Movie Title</th>
+                    <th>Description</th>
+                    <th>Release Date</th>
+                    <th>Duration</th>
+                    <th>Rating</th>
+                    <th>Director</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for movie in movies %}
+                <tr>
+                    <td>{{ movie[0] }}</td>
+                    <td>{{ movie[1] }}</td>
+                    <td>{{ movie[2] }}</td>
+                    <td>{{ movie[3].strftime('%Y-%m-%d') }}</td>
+                    <td>{{ movie[4] }}</td>
+                    <td>{{ movie[5] }}</td>
+                    <td>{{ movie[6] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

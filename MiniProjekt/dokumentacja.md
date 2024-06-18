@@ -1387,42 +1387,96 @@ Szablon strony internetowej, który wyświetla naszą stronę startową:
 <head>
     <meta charset="UTF-8">
     <title>Elementy z bazy danych</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #eeeeee;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h2 {
+            color: #757575;
+            margin-top: 20px;
+            text-align: center;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background: #fdfdfd;
+            margin: 10px 0;
+            padding: 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        li a {
+            text-decoration: none;
+            color: #606060;
+            font-weight: bold;
+            display: block;
+            padding: 10px;
+            width: 100%;
+            height: 100%;
+        }
+        li a:hover {
+            color: #fff;
+            background-color: #757575;
+        }
+        .container {
+            width: 80%;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 50px;
+            background: #f7f7f7;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
 </head>
 <body>
 
-    <h2>Lista tabeli w bazie:</h2>
-    <ul>
-        {% for table in tables %}
-            <li><a href="{{ url_for(table[0]) }}">{{ table[1] }}</a></li>
-        {% endfor %}
-    </ul>
+    <div class="container">
+        <h2>Lista tabeli w bazie:</h2>
+        <ul>
+            {% for table in tables %}
+                <li><a href="{{ url_for(table[0]) }}">{{ table[1] }}</a></li>
+            {% endfor %}
+        </ul>
 
-    <br>
+        <br>
 
-    <h2>Lista widoków:</h2>
-    <ul>
-        {% for view in views %}
-            <li><a href="{{ url_for(view[0]) }}">{{ view[1] }}</a></li>
-        {% endfor %}
-    </ul>
-    
-    <br>
+        <h2>Lista widoków:</h2>
+        <ul>
+            {% for view in views %}
+                <li><a href="{{ url_for(view[0]) }}">{{ view[1] }}</a></li>
+            {% endfor %}
+        </ul>
+        
+        <br>
 
-    <h2>Lista funkcji:</h2>
-    <ul>
-        {% for func in functions %}
-            <li><a href="{{ url_for(func[0], client_id=default_client_id) }}">{{ func[1] }}</a></li>
-        {% endfor %}
-    </ul>
-    
-    <h2>Client Management</h2>
-    <ul>
-        <li><a href="{{ url_for('procedures.add_client_form') }}">Add Client</a></li>
-        <li><a href="{{ url_for('procedures.delete_client_form') }}">Delete Client</a></li>
-        <li><a href="{{ url_for('procedures.update_client_form') }}">Update Client</a></li>
-        <li><a href="{{ url_for('tables.get_Clients') }}">List Clients</a></li>
-    </ul>
-    
+        <h2>Lista funkcji:</h2>
+        <ul>
+            {% for func in functions %}
+                <li><a href="{{ url_for(func[0], client_id=default_client_id) }}">{{ func[1] }}</a></li>
+            {% endfor %}
+        </ul>
+
+        <br>
+        
+        <h2>Zarządzanie klientami</h2>
+        <ul>
+            <li><a href="{{ url_for('procedures.add_client_form') }}">Dodaj klienta</a></li>
+            <li><a href="{{ url_for('procedures.delete_client_form') }}">Usuń klienta</a></li>
+            <li><a href="{{ url_for('procedures.update_client_form') }}">Zaktualizuj klienta</a></li>
+            <li><a href="{{ url_for('tables.get_Clients') }}">Lista klientów</a></li>
+        </ul>
+    </div>
 
 </body>
 </html>
@@ -1497,6 +1551,11 @@ Dane są wyświetlane w tabelce dzięki plikowi `table.html`
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>All Rentals</title>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #eeeeee;
+            color: #333;
+        }
         table {
             width: 70%;
             border-collapse: collapse;
@@ -1652,9 +1711,11 @@ Po kliknięciu przycisku `Reserve` otwiera się formularz z danymi do wypełnien
 
 ![views](imgs/backend/available_copies-2.png)
 
-Po wypełnieniu danych możemy zobaczyć, ży wykonana została procedura odpowiedzialna za dodanie nowej rezerwacji. I pojawiła się nowa rezerwacja:
-
 ![views](imgs/backend/available_copies-3.png)
+
+Po wypełnieniu danych możemy zobaczyć, ży wykonana została procedura odpowiedzialna za dodanie nowej rezerwacji. I pojawiła się nowa rezerwacja na film o nazwie "Civil War":
+
+![views](imgs/backend/available_copies-4.png)
 
 ### Funkcje
 

@@ -1066,7 +1066,7 @@ BEGIN
 END;
 ```
 Rezultat - nowy klient został dodany:
-![alt text](image.png)
+![alt text](imgs/procedures/p_add_client.png)
 
 #### `p_delete_client`
 
@@ -1104,7 +1104,7 @@ BEGIN
     P_DELETE_CLIENT(62); -- Nie ma takiego klienta
 END;
 ```
-![alt text](image-1.png)
+![alt text](imgs/procedures/p_delete_error.png)
 
 #### `p_update_client`
 
@@ -1147,7 +1147,7 @@ BEGIN
     p_update_client(100, 'Dariusz', 'Michalski', 'Kraków, ul. Floriańska 2', '987654321'); -- Nie ma takiego klienta
 END;
 ```
-![alt text](image-1.png)
+![alt text](imgs/procedures/p_delete_error.png)
 
 ---
 ### Triggery
@@ -1330,9 +1330,9 @@ END;
 
 ```
 Przykład działania:
-![alt text](image-2.png)
+![alt text](imgs/triggers/t_client_to_test.png)
 Klient o `id=6` nie oddał jeszcze filmu. Trigger zablokuje usunięcie danego klienta
-![alt text](image.png)
+![alt text](imgs/triggers/t_remove_client.png)
 
 ---
 <br />

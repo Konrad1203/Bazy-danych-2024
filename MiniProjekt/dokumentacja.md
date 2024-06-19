@@ -76,15 +76,15 @@
 ### Aktorzy
 
 1. Klient:
-    - klient może założyć konto, które umożliwia mu korzystanie z systemu,
+    - może założyć konto, które umożliwia mu korzystanie z systemu,
     - może składać rezerwacje na wybrany film,
-    - przegląda listę filmów oferowanych przez wyporzyczalnie,
-    - przeglądanie listy obecnie zarezrwonych i wypożyczonych przez niego filmów.
+    - przegląda listę filmów oferowanych przez wypożyczalnie,
+    - przeglądanie listy obecnie zarezerwowanych i wypożyczonych przez niego filmów.
 
 2. Pracownik:
-    - rejestruje wypożycznie i zwracanie filmów w systemie,
-    - dodawanie nowych filmów i kopii do systemu,
-    - przegląda rezerawacje i wypożyczenia klientów,
+    - rejestruje wypożyczenie oraz zwracanie filmów w systemie,
+    - może dodać nowe filmy i ich kopie do systemu,
+    - może przeglądać rezerwacje i wypożyczenia klientów,
     - może generować raporty.
     
 3. Administrator
@@ -1163,7 +1163,7 @@ Rezultat - nowy klient został dodany:
 
 #### `p_delete_client`
 
-Procedura umożliwa usunięcie klienta z tabeli  `Clients` znające jego `id`. Operacja jest niemożliwa do wykonania gdy w bazie nie występuje taki klient lub gdy klient ma na wyporzyczeniu jakiś film.
+Procedura umożliwa usunięcie klienta z tabeli  `Clients` znające jego `id`. Operacja jest niemożliwa do wykonania gdy w bazie nie występuje taki klient lub gdy klient ma na wypożyczeniu jakiś film.
 
 ```sql
 create PROCEDURE P_DELETE_CLIENT (
@@ -2437,7 +2437,7 @@ Szkielet do pokazania rezerwacji klienta - `get_client_reservations.html`
 </html>
 ```
 
-Szkielet formularza potrzebnego do wyporzyczenia copii - `rent_movie_form.html`
+Szkielet formularza potrzebnego do wypożyczenia kopii - `rent_movie_form.html`
 
 ```html
 <!DOCTYPE html>

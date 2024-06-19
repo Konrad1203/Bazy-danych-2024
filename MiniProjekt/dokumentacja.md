@@ -4,6 +4,75 @@
 
 <br>
 
+### Spis treści
+- [Aktorzy](#aktorzy)
+- [Diagram bazy danych](#diagram-bazy-danych)
+- [Opis tabel](#opis-tabel)
+  - [Clients](#clients---tabela-zarejestrowanych-klientów-wypożyczalni)
+  - [Reservation](#reservation---tabela-z-rezerwacjami-filmów-do-przyszłego-wypożyczenia)
+  - [Rental](#rental---tabela-z-informacjami-o-wypożyczeniach-filmów-przez-klientów-aktualne-oraz-zwrócone)
+  - [Copy](#copy---tabela-fizycznych-kopii-danego-filmu)
+  - [Categories](#categories---tabela-kategorii-filmów)
+  - [Movies](#movies---tabela-zawierająca-informacje-o-filmach)
+  - [Actors](#actors---tabela-aktorów)
+  - [Actors_in_movie](#actors_in_movie---tabela-łącząca-aktora-z-filmem-do-relacji-wiele-do-wielu)
+- [Widoki](#widoki)
+  - [vw_available_copies](#vw_available_copies)
+  - [vw_currently_borrowed_copies](#vw_currently_borrowed_copies)
+  - [vw_current_reservations](#vw_current_reservations)
+  - [vw_movie_popularity](#vw_movie_popularity)
+  - [vw_clients_delays_sum](#vw_clients_delays_sum)
+  - [vw_actor_rentals](#vw_actor_rentals)
+  - [vw_most_popular_actors_per_category](#vw_most_popular_actors_per_category)
+  - [vw_movies_with_category](#vw_movies_with_category)
+- [Funkcje](#funkcje)
+  - [f_get_client_reservations](#f_get_client_reservations)
+  - [f_is_copy_available](#f_is_copy_available)
+  - [f_get_movies_by_category](#f_get_movies_by_category)
+  - [f_check_client_exist](#f_check_client_exist)
+  - [f_check_copy_exist](#f_check_copy_exist)
+  - [f_user_has_reservation](#f_user_has_reservation)
+  - [f_get_reservation_id](#f_get_reservation_id)
+  - [f_get_available_copies_for_movie_id](#f_get_available_copies_for_movie_id)
+  - [f_get_available_copies_for_movie_name](#f_get_available_copies_for_movie_name)
+- [Procedury](#procedury)
+  - [p_add_reservation](#p_add_reservation)
+  - [p_change_reservation_status](#p_change_reservation_status)
+  - [p_add_new_rental](#p_add_new_rental)
+  - [p_return_rental](#p_return_rental)
+  - [update_copy_availability](#update_copy_availability)
+  - [p_add_client](#p_add_client)
+  - [p_delete_client](#p_delete_client)
+  - [p_update_client](#p_update_client)
+- [Triggery](#triggery)
+  - [t_copy_check_available](#t_copy_check_available)
+  - [t_reservation_add](#t_reservation_add)
+  - [t_reservation_update](#t_reservation_update)
+  - [t_rental_add](#t_rental_add)
+  - [t_rental_return](#t_rental_return)
+  - [t_prevent_delete_client_with_rentals](#t_prevent_delete_client_with_rentals)
+- [Backend](#backend)
+  - [Połączenie z bazą danych](#połączenie-z-bazą-danych)
+  - [Główna aplikacja](#główna-aplikacja)
+  - [Wykonywanie poleceń](#wykonywanie-poleceń)
+  - [Uruchomienie](#uruchomienie)
+  - [Tabele](#tabele)
+  - [Widoki](#widoki-1)
+  - [Funkcje](#funkcje-1)
+  - [Procedury](#procedury-1)
+  - [Działanie procedur](#działanie-procedur)
+    - [Anulowanie rezerwacji](#anulowanie-rezerwacji)
+    - [Wypożyczenie filmu](#wypożyczenie-filmu)
+    - [Zwrot filmu do wypożyczalni](#zwrot-filmu-do-wypożyczalni)
+  - [Operacje CRUD](#operacje-crud)
+    - [Dodanie nowego klienta](#dodanie-nowego-klienta)
+    - [Aktualizacja klienta](#aktualizacja-klienta)
+    - [Usunięcie klienta](#usunięcie-klienta)
+    - [Wyświetlenie pełnej listy klientów](#wyświetlenie-pełnej-listy-klientów)
+  - [Pozostały kod użyty w projekcie](#pozostały-kod-użyty-w-projekcie)
+
+<br/><br/>
+
 ### Aktorzy
 
 1. Klient:
@@ -23,6 +92,7 @@
     - może edytować, dodawać, usuwać dane w tabelach,
     - może generować raporty.
 
+<div style="page-break-after: always"></div>
 
 ### Diagram bazy danych
 <p align="center">
@@ -50,8 +120,6 @@ CREATE TABLE Clients (
 );
 ```
 ![clients](imgs/tables/clients.png)
-
----
 
 #### `Reservation` - tabela z rezerwacjami filmów do przyszłego wypożyczenia
 - reservation_id - id rezerwacji,
@@ -715,7 +783,7 @@ EXCEPTION
         raise_application_error(-20001, 'Error retrieving reservation_id: ' || SQLERRM);
 END;
 ```
-Użycie:
+Użycie:  
 ![f_get_reservation_id](imgs/functions/f_get_reservation_id.png)
 
 ---
@@ -1380,7 +1448,7 @@ Klient o `id=6` nie oddał jeszcze filmu. Trigger zablokuje usunięcie danego kl
 
 Aplikacja została zrealizowana w `Pythonie`, przy użyciu frameworka `Flask`.
 
-#### Połączenie z bazą danych
+### Połączenie z bazą danych
 
 W pliku `base.py` łączymy sie z bazą danych przy pomocy modułu `cx_Oracle`, który umożliwia interakcję z bazą danych `Oracle` za pomocą języka `Python`. Funkcja odczytuje plik `config.txt` z nazwą użytkownika i hasłem do bazy danych by móc nawiązać połączenie.
 

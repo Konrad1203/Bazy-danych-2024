@@ -23,14 +23,15 @@
     - może edytować, dodawać, usuwać dane w tabelach,
     - może generować raporty.
 
-### Diagram bazy danych
 
+### Diagram bazy danych
 <p align="center">
-  <img src="imgs/diagram.png" alt="Diagram">
+  <img src="imgs/diagram.png" alt="Diagram" width="600" height="600">
 </p>
 
-### Opis tabel
+---
 
+### Opis tabel
 #### `Clients` - tabela zarejestrowanych klientów wypożyczalni
 - client_id - id klienta (to samo co login_id),
 - firstname - imię,
@@ -880,13 +881,18 @@ EXCEPTION
 END;
 ```
 ![p_change_reservation_status](imgs/procedures/p_change_reservation_status1.png)
+
 I teraz spróbujemy anulować rezerwacje:
+
 ```sql
 begin
     p_change_reservation_status(1,'C');
 end;    
 ```
-![p_change_reservation_status](imgs/procedures/p_change_reservation_status2.png)I zmiana w tabeli `Copy`:
+![p_change_reservation_status](imgs/procedures/p_change_reservation_status2.png)
+
+I zmiana w tabeli `Copy`:
+
 ![p_change_reservation_status](imgs/procedures/p_change_reservation_status3.png)
 
 ---
@@ -940,10 +946,13 @@ END;
 ```
 
 Użycie:
+
 Kopia o id = 2 jest dostępna:
+
 ![p_add_new_rental](imgs/procedures/p_add_new_rental1.png)
 
 po wykonaniu procedury:
+
 ![p_add_new_rental](imgs/procedures/p_add_new_rental2.png)
 
 ![p_add_new_rental](imgs/procedures/p_add_new_rental3.png)
@@ -988,6 +997,8 @@ Przed:
 ![p_remove_rental](imgs/procedures/p_remove_rental-1.png)
 
 ![p_remove_rental](imgs/procedures/p_remove_rental-3.png)
+
+Po wykonaniu:
 
 ```sql
 begin
@@ -1371,7 +1382,7 @@ Aplikacja została zrealizowana w `Pythonie`, przy użyciu frameworka `Flask`.
 
 #### Połączenie z bazą danych
 
-W pliku `base.py` łączymy sie z bazą danych przy pomocy modułu `cx_Oracle`, który umożliwia interakcję z bazą danych `Oracle` za pomocą języka `Python`. 
+W pliku `base.py` łączymy sie z bazą danych przy pomocy modułu `cx_Oracle`, który umożliwia interakcję z bazą danych `Oracle` za pomocą języka `Python`. Funkcja odczytuje plik `config.txt` z nazwą użytkownika i hasłem do bazy danych by móc nawiązać połączenie.
 
 ```python
 import cx_Oracle
@@ -1406,6 +1417,8 @@ def connect_to_data_base():
 ```
 
 ### Główna aplikacja
+
+Ten kod konfiguruje aplikację webową za pomocą frameworka `Flask`, która umożliwia interakcję z bazą danych poprzez różne komponenty, takie jak tabele, widoki, procedury składowane i funkcje. Po uruchomieniu aplikacji, główna strona `(http://localhost:5000)` wyświetla dostępne tabele, widoki i funkcje oraz domyślnie pokazuje dane klienta o identyfikatorze 1.
 
 ```python
 from flask import Flask, render_template
@@ -1867,7 +1880,37 @@ def VW_CURRENTLY_BORROWED_COPIES():
 ```
 
 \
-Przykładowy widok przedstawiający możliwość złożenia rezerwacji na dostępne filmy. Możliwe jest wyszukanie filmu pjaki nas interesuje po nazwie
+Widok `VW_AVAILABLE_COPIES` przedstawiający możliwość złożenia rezerwacji na dostępne filmy. Możliwe jest wyszukanie filmu jaki nas interesuje po nazwie. 
+
+Endpoint dla tego widoku:
+
+```python
+@views_blueprint.route('/VW_AVAILABLE_COPIES', methods=['GET', 'POST'])   # dostępne kopie wyszukiwaniem i funkcją rezerwacji
+def VW_AVAILABLE_COPIES():
+    if request.method == 'GET':
+        return execute_and_render("select * from VW_AVAILABLE_COPIES", 'views/available_copies.html', 'copies')
+    
+    movie_id = request.form.get('movie_id')
+    movie_name = request.form.get('movie_name')
+    print("Arguments:", movie_id, movie_name)
+
+    if movie_id:
+        print("Movie ID:", movie_id)
+        result = call_function('f_get_available_copies_for_movie_id', [int(movie_id)])
+        print("Result:", result)
+        if 'error' in result:
+            result = []
+        return render_template('views/available_copies.html', copies=result)
+    elif movie_name:
+        print("Movie Name:", movie_name)
+        result = call_function('f_get_available_copies_for_movie_name', [movie_name])
+        print("Result:", result)
+        if 'error' in result:
+            result = []
+        return render_template('views/available_copies.html', copies=result)
+    else:
+        return execute_and_render("select * from VW_AVAILABLE_COPIES", 'views/available_copies.html', 'copies')
+```
 
 ![views](imgs/backend/available_copies.png)
 
@@ -1947,7 +1990,26 @@ def redirect_client_reservations():
 ```
 
 \
-Funkcja pokazująca filmy filtrowane po kategori do jakiej należą:
+Przykład funckji wyświetlający listę wszystkich filmów w wypożyczali z możliwością filtrowania po kategorii.
+
+Enpoint dla tej funkcji:
+
+```python
+@functions_blueprint.route('/filter_movies', methods=['GET', 'POST'])
+def filter_movies():
+    if request.method == 'POST':
+        category_id = request.form['category_id']
+        result = call_function('f_get_movies_by_category', [int(category_id)])
+        
+        if 'error' in result:
+            return f"Error: {result['error']}", 500
+        else:
+            movies = result
+    else:
+        movies = get_all_movies()
+
+    return render_template('views/movie_filter_form.html', categories=get_categories(), movies=movies)
+```
 
 ![function](imgs/backend/filter_by_category-1.png)
 
@@ -2099,6 +2161,20 @@ Po kliknięciu linku możemy wypełnić formularz do wypożyczenia filmu. Musimy
 
 ![rent_movie](imgs/backend/rent_movie-1.png)
 
+```python
+@procedures_blueprint.route('/return_movie', methods=['POST'])
+def return_movie():
+    rental_id = request.form['rental_id']
+
+    result = call_procedure('P_RETURN_RENTAL', [int(rental_id)])
+    
+    if 'error' in result:
+        return "Error: " + result['error'], 500
+    else:
+        return redirect('http://localhost:5000')
+
+```
+
 Przykładowe dane:
 
 ![rent_movie](imgs/backend/rent_movie-2.png)
@@ -2112,6 +2188,24 @@ I w tabeli rental na samym końcy pojawiło się nowe wypożyczenie:
 Spróbujmy zwrócić przedchwilą wypożyczony film. Po kliknięciu w link do zwrotu ukazyuje nam się formularz do zwrotu filmu.
 
 ![return_movie](imgs/backend/return_movie-1.png)
+
+```python
+@procedures_blueprint.route('/return_movie_form', methods=['GET'])
+def return_movie_form():
+    return render_template('procedures/return_movie_form.html')
+
+
+@procedures_blueprint.route('/return_movie', methods=['POST'])
+def return_movie():
+    rental_id = request.form['rental_id']
+
+    result = call_procedure('P_RETURN_RENTAL', [int(rental_id)])
+    
+    if 'error' in result:
+        return "Error: " + result['error'], 500
+    else:
+        return redirect('http://localhost:5000')
+```
 
 I widzimy, że film został zwrócony.
 
@@ -2128,12 +2222,53 @@ Zrealizowaliśmy opracje CRUD na tabeli `Clients`
 
 ![client](imgs/backend/client_add-1.png)
 
+```python
+
+@procedures_blueprint.route('/add_client_form', methods=['GET'])
+def add_client_form():
+    return render_template('procedures/add_client_form.html')
+
+@procedures_blueprint.route('/add_client', methods=['POST'])
+def add_client():
+    firstname = request.form['firstname']
+    lastname = request.form['lastname']
+    address = request.form['address']
+    phone = request.form['phone']
+
+    result = call_procedure('p_add_client', [firstname, lastname, address, phone])
+    
+    if 'error' in result:
+        return "Error: " + result['error'], 500
+    else:
+        return redirect(url_for('index'))
+```
+
 ![client](imgs/backend/client_add-2.png)
 
 #### Aktualizacja klienta
 
 ![client](imgs/backend/client_update-1.png)
 
+```python
+@procedures_blueprint.route('/update_client_form', methods=['GET'])
+def update_client_form():
+    return render_template('procedures/update_client_form.html')
+
+@procedures_blueprint.route('/update_client', methods=['POST'])
+def update_client():
+    client_id = request.form['client_id']
+    firstname = request.form['firstname']
+    lastname = request.form['lastname']
+    address = request.form['address']
+    phone = request.form['phone']
+
+    result = call_procedure('p_update_client', [int(client_id), firstname, lastname, address, phone])
+    
+    if 'error' in result:
+        return "Error: " + result['error'], 500
+    else:
+        return redirect(url_for('index'))
+```
 
 ![client](imgs/backend/client_update-2.png)
 
@@ -2141,6 +2276,385 @@ Zrealizowaliśmy opracje CRUD na tabeli `Clients`
 
 ![client](imgs/backend/client_delete-1.png)
 
+```python
+@procedures_blueprint.route('/delete_client_form', methods=['GET'])
+def delete_client_form():
+    return render_template('procedures/delete_client_form.html')
+
+@procedures_blueprint.route('/delete_client', methods=['POST'])
+def delete_client():
+    client_id = request.form['client_id']
+
+    result = call_procedure('p_delete_client', [int(client_id)])
+    
+    if 'error' in result:
+        return "Error: " + result['error'], 500
+    else:
+        return redirect(url_for('index'))
+```
+
+I klient został usunięty
+
+![client](imgs/backend/client_delete-2.png)
+
 #### Wyświetlenie pełnej listy klientów
 
 ![client](imgs/backend/client_display-1.png)
+
+
+### Pozostały kod użyty w projekcie
+
+Szkielet do pokazania rezerwacji klienta - `get_client_reservations.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Client Reservations</title>
+</head>
+<body>
+    <div class="container mt-5">
+        <a href="../" class="btn btn-primary mb-4">< Powrót do strony głównej</a>
+        <h1 class="mb-4">Client Reservations</h1>
+        
+        <form method="post" action="/client_reservations" class="form-inline mb-4">
+            <div class="form-group mr-2">
+                <label for="client_id" class="mr-2">Client ID:</label>
+                <input type="number" id="client_id" name="client_id" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+
+        <p><strong>Client ID:</strong> {{ client_id }}</p>
+        
+        <table class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Reservation ID</th>
+                    <th>Movie Title</th>
+                    <th>Reservation Date</th>
+                    <th>Reservation Expiry Date</th>
+                    <th>Status</th>
+                    <th>Cancel</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in reservations %}
+                <tr>
+                    <td>{{ row[0] }}</td>
+                    <td>{{ row[1] }}</td>
+                    <td>{{ row[2] }}</td>
+                    <td>{{ row[3] }}</td>
+                    <td>{{ row[4] }}</td>
+                    <td>
+                        <form action="/cancel_reservation/{{ row[0] }}" method="POST" data-client-id="{{ client_id }}" class="d-inline">
+                            <input type="hidden" name="reservation_id" value="{{ row[0] }}">
+                            <input type="hidden" name="data-client-id" value="{{ client_id }}">
+                            <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+```
+
+Szkielet formularza potrzebnego do wyporzyczenia copii - `rent_movie_form.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Rent a Movie</title>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Rent a Movie</h1>
+        <form action="/rental" method="post">
+            <div class="form-group">
+                <label for="client_id">Client ID:</label>
+                <input type="text" class="form-control" id="client_id" name="client_id" required>
+            </div>
+            <div class="form-group">
+                <label for="copy_id">Copy ID:</label>
+                <input type="text" class="form-control" id="copy_id" name="copy_id" required>
+            </div>
+            <div class="form-group">
+                <label for="rental_duration">Rental Duration (days):</label>
+                <input type="text" class="form-control" id="rental_duration" name="rental_duration" value="14" required>
+            </div>
+            <button type="submit" class="btn btn-secondary">Submit Rental</button> <!-- Szary przycisk -->
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+```
+
+Skielet do wyświetlania coppi możliwych do zarezerwoania wraz z przyciskami do rezerwacji - `available_copiers.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Available Copies</title>
+</head>
+<body>
+    <div class="container mt-5">
+        <a href="../" class="btn btn-primary mb-4">< Powrót do strony głównej</a>
+        <h1 class="mb-4">Available Copies</h1>
+        
+        <form method="post" class="form-inline mb-4">
+            <div class="form-group mr-2">
+                <label for="movie_id" class="mr-2">Movie ID:</label>
+                <input type="text" id="movie_id" name="movie_id" class="form-control">
+            </div>
+            <div class="form-group mr-2">
+                <label for="movie_name" class="mr-2">Movie Name:</label>
+                <input type="text" id="movie_name" name="movie_name" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-primary mr-2">Search</button>
+            <button type="button" class="btn btn-secondary" onclick="window.location.href='/VW_AVAILABLE_COPIES'">Reset</button>
+        </form>
+        
+        <table class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Movie ID</th>
+                    <th>Copy ID</th>
+                    <th>Movie Title</th>
+                    <th>Category</th>
+                    <th>Release Date</th>
+                    <th>Duration</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for copy in copies %}
+                <tr>
+                    <td>{{ copy[0] }}</td>
+                    <td>{{ copy[1] }}</td>
+                    <td>{{ copy[2] }}</td>
+                    <td>{{ copy[3] }}</td>
+                    <td>{{ copy[4].strftime('%Y-%m-%d') }}</td>
+                    <td>{{ copy[5] }}</td>
+                    <td>
+                        <form action="/reserve" method="post" class="d-inline">
+                            <input type="hidden" name="copy_id" value="{{ copy[1] }}">
+                            <button type="submit" class="btn btn-success btn-sm">Reserve</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+```
+
+Skielet do wyświetlania filmów z możliwością filtrowania po kategorii - `movie_filter_form.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Filter Movies by Category</title>
+</head>
+<body>
+    <div class="container mt-5">
+        <a href="../" class="btn btn-primary mb-4">< Powrót do strony głównej</a>
+        <h1 class="mb-4">Filter Movies by Category</h1>
+        
+        <form action="/filter_movies" method="POST" class="form-inline mb-4">
+            <div class="form-group mr-2">
+                <label for="category_id" class="mr-2">Select Category:</label>
+                <select name="category_id" id="category_id" class="form-control">
+                    {% for category in categories %}
+                    <option value="{{ category[0] }}">{{ category[1] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary mr-2">Filter</button>
+            <button type="button" class="btn btn-secondary" onclick="window.location.href='/filter_movies'">Reset</button>
+        </form>
+
+        {% if movies %}
+        <h2 class="mb-4">Movies in Selected Category</h2>
+        <table class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Category Name</th>
+                    <th>Movie Title</th>
+                    <th>Description</th>
+                    <th>Release Date</th>
+                    <th>Duration</th>
+                    <th>Rating</th>
+                    <th>Director</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for movie in movies %}
+                <tr>
+                    <td>{{ movie[0] }}</td>
+                    <td>{{ movie[1] }}</td>
+                    <td>{{ movie[2] }}</td>
+                    <td>{{ movie[3].strftime('%Y-%m-%d') }}</td>
+                    <td>{{ movie[4] }}</td>
+                    <td>{{ movie[5] }}</td>
+                    <td>{{ movie[6] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+```
+
+Formularze do operacji CRUD na tabeli `Clients` - `add_client_form.html`, `delete_client_form.html`, `update_client_form.html`
+
+```html
+<!doctype html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Add Client</title>
+</head>
+<body>
+    <a href="../">< Powrót do strony głównej</a>
+    <div class="container mt-5">
+        
+        <h1 class="mb-4">Add a New Client</h1>
+        <form action="{{ url_for('procedures.add_client') }}" method="post">
+            <div class="form-group">
+                <label for="firstname">First Name:</label>
+                <input type="text" class="form-control" id="firstname" name="firstname" required>
+            </div>
+            <div class="form-group">
+                <label for="lastname">Last Name:</label>
+                <input type="text" class="form-control" id="lastname" name="lastname" required>
+            </div>
+            <div class="form-group">
+                <label for="address">Address:</label>
+                <input type="text" class="form-control" id="address" name="address" required>
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone:</label>
+                <input type="text" class="form-control" id="phone" name="phone" required>
+            </div>
+            <button type="submit" class="btn btn-secondary">Add Client</button> <!-- Szary przycisk -->
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+
+
+<!doctype html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Delete Client</title>
+</head>
+<body>
+    <div class="container mt-5">
+        <a href="../">< Powrót do strony głównej</a>
+        <h1 class="mb-4">Delete Client</h1>
+        <form action="{{ url_for('procedures.delete_client') }}" method="post">
+            <div class="form-group">
+                <label for="client_id">Client ID:</label>
+                <input type="text" class="form-control" id="client_id" name="client_id" required>
+            </div>
+            <button type="submit" class="btn btn-secondary">Delete Client</button> <!-- Szary przycisk -->
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+
+
+<!doctype html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Update Client</title>
+</head>
+<body>
+    <a href="../">< Powrót do strony głównej</a>
+    <div class="container mt-5">
+        <h1 class="mb-4">Update Client</h1>
+        <form action="{{ url_for('procedures.update_client') }}" method="post">
+            <div class="form-group">
+                <label for="client_id">Client ID:</label>
+                <input type="text" class="form-control" id="client_id" name="client_id" required>
+            </div>
+            <div class="form-group">
+                <label for="firstname">First Name:</label>
+                <input type="text" class="form-control" id="firstname" name="firstname" required>
+            </div>
+            <div class="form-group">
+                <label for="lastname">Last Name:</label>
+                <input type="text" class="form-control" id="lastname" name="lastname" required>
+            </div>
+            <div class="form-group">
+                <label for="address">Address:</label>
+                <input type="text" class="form-control" id="address" name="address" required>
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone:</label>
+                <input type="text" class="form-control" id="phone" name="phone" required>
+            </div>
+            <button type="submit" class="btn btn-secondary">Update Client</button> <!-- Szary przycisk -->
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+```

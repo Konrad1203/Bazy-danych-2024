@@ -367,7 +367,7 @@ FROM Reservation r
 JOIN Clients c ON r.client_id = c.client_id
 JOIN Copy co ON r.copy_id = co.copy_id
 JOIN Movies m ON co.movie_id = m.movie_id
-WHERE r.status = 'R';
+WHERE r.status = 'N';
 ```
 ```sql
 select * from vw_current_reservations;
@@ -1041,9 +1041,9 @@ BEGIN
     -- Sprawdzamy czy istnieje takie wypożyczenie
     SELECT COUNT(*) INTO v_count
     FROM Rental
-    WHERE rental_id = rental_id_input;
+    WHERE rental_id = rental_id_input AND RETURN_DATE IS NOT NULL;
     IF v_count = 0 THEN
-        raise_application_error(-20002, 'Rental ID does not exist.');
+        raise_application_error(-20002, 'Rental ID does not exist or it was returned.');
     END IF;
 
     UPDATE RENTAL

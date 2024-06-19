@@ -41,11 +41,13 @@
                     <td>{{ row[3] }}</td>
                     <td>{{ row[4] }}</td>
                     <td>
+                        {% if row[4] == 'N' %}
                         <form action="/cancel_reservation/{{ row[0] }}" method="POST" data-client-id="{{ client_id }}" class="d-inline">
                             <input type="hidden" name="reservation_id" value="{{ row[0] }}">
                             <input type="hidden" name="data-client-id" value="{{ client_id }}">
                             <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
                         </form>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
